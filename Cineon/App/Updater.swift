@@ -54,8 +54,8 @@ final class Updater {
             startingUpdater: Self.shouldStart, updaterDelegate: delegate, userDriverDelegate: delegate
         )
         canCheck = controller.updater.canCheckForUpdates
-        observation = controller.updater.observe(\.canCheckForUpdates, options: [.new]) { [weak self] updater, _ in
-            let value = updater.canCheckForUpdates
+        observation = controller.updater.observe(\.canCheckForUpdates, options: [.new]) { [weak self] _, change in
+            guard let value = change.newValue else { return }
             Task { @MainActor in self?.canCheck = value }
         }
     }
