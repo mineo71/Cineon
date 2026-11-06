@@ -45,7 +45,7 @@ public sealed class MainWindow : Window
         _root.Children.Add(_topBar);
         Content = _root;
 
-        SetTitleBar(_topBar.DragArea);
+        _topBar.DragArea.Loaded += (_, _) => SetTitleBar(_topBar.DragArea);
         Paint();
         Theme.Changed += Paint;
         app.Changed += () => _pages.SetTopInset(app.Route == Route.Home ? 0 : TopBar.Height);

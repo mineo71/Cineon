@@ -87,6 +87,8 @@ public sealed class TopBar : Component
         bar.Height = Height;
 
         DragArea.Background = Background(p);
+        // The drag area outlives each render, so it leaves the old layout before joining the new one.
+        if (VisualTreeHelper.GetParent(DragArea) is Panel previous) previous.Children.Remove(DragArea);
         return Ui.ZStack(DragArea, bar);
     }
 

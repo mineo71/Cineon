@@ -84,6 +84,12 @@ public sealed partial class AppModel : Observable
     public void CloseCommandBar() => IsCommandBarVisible = false;
 
     public void ToggleTheme() => IsDark = !IsDark;
+
+    /// Saves what needs saving before the app closes.
+    public void PrepareToQuit()
+    {
+        // Services.Updater.Shared.ApplyOnQuit(); (after the data-layer merge)
+    }
 }
 
 /// Short messages at the bottom of the window, sometimes with one action.

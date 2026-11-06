@@ -8,6 +8,8 @@ public static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        // Velopack's install, update and uninstall hooks. Must run before anything else.
+        Velopack.VelopackApp.Build().Run();
         WinRT.ComWrappersSupport.InitializeComWrappers();
         Application.Start(callback =>
         {

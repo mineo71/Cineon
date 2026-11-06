@@ -1,0 +1,73 @@
+name: windows-release
+
+# `make release` on the Mac publishes the release and pushes the tag. This adds the Windows builds
+# to the same release: an installer and a portable zip per architecture, plus Velopack's feed files,
+# which installed copies read to update themselves.
+#
+# It stays off until windows/RELEASE exists, so tags made before the port is finished don't ship it.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to add Windows builds to, such as v1.1.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: ${{ hashFiles('windows/RELEASE') != '' || github.event_name == 'workflow_dispatch' }}
+    runs-on: windows-2025
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Version and notes
+        run: |
+          $version = $env:TAG.TrimStart('v')
+          "VERSION=$version" | Out-File -Append $env:GITHUB_ENV
+          $lines = Get-Content CHANGELOG.md
+          $start = ($lines | Select-String -Pattern "^## \[$([regex]::Escape($version))\]").LineNumber
+          $notes = if ($start) { $lines[$start..($lines.Length - 1)] | ForEach-Object -Begin { $go = $true } -Process { if ($_ -match '^## ') { $go = $false }; if ($go) { $_ } } } else { @("Cineon $version") }
+          $notes | Out-File -Encoding utf8 notes.md
+
+      - name: Tests
+        working-directory: windows
+        run: dotnet test --project Cineon.Core.Tests
+
+      - name: Install vpk
+        run: dotnet tool install -g vpk --version 1.2.161
+
+      - name: Build and pack
+        working-directory: windows
+        run: |
+          foreach ($rid in @('win-x64', 'win-arm64')) {
+            dotnet publish Cineon.App -c Release -r $rid -o "../publish/$rid" -p:Version=$env:VERSION
+            # Earlier releases, so Velopack can make small delta updates.
+            vpk download github --repoUrl https://github.com/${{ github.repository }} --channel $rid --outputDir ../releases 2>$null
+            vpk pack --packId Cineon --packVersion $env:VERSION --packDir "../publish/$rid" --mainExe Cineon.exe `
+              --packTitle Cineon --packAuthors "Oleh Rylskyj" --icon Cineon.App/Assets/Cineon.ico `
+              --channel $rid --runtime $rid --releaseNotes ../notes.md --outputDir ../releases
+          }
+
+      - name: Upload to the release
+        run: |
+          # The Mac script creates the release right after pushing the tag; wait for it.
+          for ($i = 0; $i -lt 60; $i++) { gh release view $env:TAG *> $null; if ($LASTEXITCODE -eq 0) { break }; Start-Sleep 10 }
+          $files = Get-ChildItem releases -File | Where-Object { $_.Name -match [regex]::Escape($env:VERSION) -or $_.Name -match '^(releases|assets)\.win-|^RELEASES-win-|-Setup\.exe$|-Portable\.zip$' }
+          gh release upload $env:TAG $files.FullName --clobber
