@@ -19,6 +19,9 @@ public sealed class TopBar : Component
     /// The bar's empty background, which drags the window.
     public Border DragArea { get; } = new() { Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent) };
 
+    /// The button at the end of the tools that opens the app menu, as last rendered.
+    public Button? MoreButton { get; private set; }
+
     public TopBar(AppModel app, MainWindow window)
     {
         _app = app;
@@ -61,10 +64,15 @@ public sealed class TopBar : Component
                 Ui.Line("Cineon", Typeface.Bold(17), p.Ink)),
             () => _app.Go(Route.Home), help: "Home");
 
+        // Windows has no menu bar: the Mac's menus open from here, and with Alt or F10.
+        Button? more = null;
+        more = Buttons.Icon(Glyph.More, "More (Alt)", () => { if (more is not null) AppMenu.Show(_app, more); });
+        MoreButton = more;
         var tools = Ui.HStack(0,
                 Buttons.Icon(Glyph.Search, "Search films and sites (Ctrl+K)", () => _app.OpenCommandBar()),
                 Buttons.Icon(Glyph.Globe, "Sites", () => _app.Go(Route.Web)),
-                Buttons.Icon(Glyph.Star, "Rate my films", () => _app.Go(Route.Rate)))
+                Buttons.Icon(Glyph.Star, "Rate my films", () => _app.Go(Route.Rate)),
+                more)
             .Padding(3, 0);
         var toolsCapsule = BarCapsule(tools.Size(height: 34), OnHero);
 
