@@ -7,6 +7,10 @@ public static class Pages
 {
     public static UIElement For(AppModel app) => app.Route switch
     {
+        Route.Home => new HomePage(app),
+        Route.Library => new LibraryPage(app),
+        Route.Timeline => new TimelinePage(app),
+        Route.Rate => new RatePage(app),
         _ => Placeholder(app.Route.ToString()),
     };
 

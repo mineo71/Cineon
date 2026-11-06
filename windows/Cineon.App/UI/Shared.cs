@@ -50,9 +50,9 @@ public static class Stars
 {
     private const string Filled = "";
 
-    public static Grid Star(double fill, double size, double emptyOpacity = 1)
+    public static Grid Star(double fill, double size, double emptyOpacity = 1, Palette? palette = null)
     {
-        var p = Theme.P;
+        var p = palette ?? Theme.P;
         var box = size * 1.1;
         var grid = new Grid { Width = box, Height = box };
         grid.Children.Add(new FontIcon { Glyph = Filled, FontFamily = Typeface.Icons, FontSize = size, Foreground = new SolidColorBrush(Palette.WithOpacity(p.Raised2, emptyOpacity)), HorizontalAlignment = HorizontalAlignment.Left, IsTextScaleFactorEnabled = false });
@@ -112,11 +112,14 @@ public sealed class StarRatingControl : Component
     private readonly double _spacing;
     private readonly bool _showsValue;
     private readonly Action<int?> _onChange;
+    private readonly Palette? _palette;
     private int? _halves;
     private int? _hover;
 
-    public StarRatingControl(int? halves, Action<int?> onChange, double size = 17, double spacing = 3, bool showsValue = true)
+    /// `palette` draws it in one palette whatever the theme, like `.environment(\.palette, .dark)`.
+    public StarRatingControl(int? halves, Action<int?> onChange, double size = 17, double spacing = 3, bool showsValue = true, Palette? palette = null)
     {
+        _palette = palette;
         _halves = halves;
         _onChange = onChange;
         _size = size;
@@ -160,11 +163,11 @@ public sealed class StarRatingControl : Component
 
     protected override UIElement Render()
     {
-        var p = Theme.P;
+        var p = _palette ?? Theme.P;
         var stars = new StackPanel { Orientation = Orientation.Horizontal, Spacing = _spacing, Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent) };
         for (var star = 1; star <= 10; star++)
         {
-            var element = Stars.Star(Stars.Fill(star, Shown), _size, _hover is null ? 1 : 0.8);
+            var element = Stars.Star(Stars.Fill(star, Shown), _size, _hover is null ? 1 : 0.8, p);
             if (_hover is not null && (Shown + 1) / 2 == star)
             {
                 element.RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5);
@@ -238,32 +241,66 @@ public sealed class FilmStripBody : Canvas
     }
 }
 
-/// An image from a URL or file, drawn by the compositor so it can be cropped, rounded and fade to
-/// black and white. Falls back to `placeholder` until (or unless) the image loads.
+/// An image from a URL or file, drawn by the compositor so it can be cropped, rounded, blurred and
+/// fade to black and white. Shows `placeholder` until (or unless) the image loads, then fades the
+/// image in over 0.25 s; one already decoded appears at once, as the Mac's `ImagePipeline.cached`
+/// does. Decoded images are shared through `ImageSurfaces`, at most `maxPixel` on their longest side.
 public sealed class RemoteImage : Grid
 {
-    private readonly Uri? _url;
+    private Uri? _url;
     private readonly bool _fill;
     private readonly double _cornerRadius;
-    private readonly ContainerVisual? _container;
+    private readonly int _maxPixel;
+    private readonly double _blur;
+    private readonly UIElement? _placeholder;
+    private readonly Compositor _compositor;
+    private readonly ContainerVisual _container;
     private SpriteVisual? _sprite;
+    private CompositionSurfaceBrush? _surfaceBrush;
     private CompositionEffectBrush? _effect;
+    private string? _shownKey;
     private double _saturation = 1;
+    private int _request;
 
-    public RemoteImage(Uri? url, UIElement? placeholder = null, bool fill = true, double cornerRadius = 0)
+    public RemoteImage(Uri? url, UIElement? placeholder = null, bool fill = true, double cornerRadius = 0, int maxPixel = 600, double blur = 0)
     {
         _url = url;
         _fill = fill;
         _cornerRadius = cornerRadius;
+        _maxPixel = maxPixel;
+        _blur = blur;
+        _placeholder = placeholder;
         if (placeholder is not null) Children.Add(placeholder);
-        if (url is null) return;
-        var host = new Border();
+        var host = new Border { IsHitTestVisible = false };
         Children.Add(host);
-        var compositor = ElementCompositionPreview.GetElementVisual(this).Compositor;
-        _container = compositor.CreateContainerVisual();
+        _compositor = ElementCompositionPreview.GetElementVisual(this).Compositor;
+        _container = _compositor.CreateContainerVisual();
         ElementCompositionPreview.SetElementChildVisual(host, _container);
         SizeChanged += (_, _) => Layout();
-        Loaded += async (_, _) => await LoadAsync(compositor);
+        Loaded += (_, _) => Load();
+        if (url is not null && ImageSurfaces.Cached(url, maxPixel) is { } cached) Show(url, cached, fade: false);
+    }
+
+    /// How long a freshly loaded image takes to fade in.
+    public double FadeSeconds { get; set; } = 0.25;
+
+    /// The image shown. Changing it keeps the old picture until the new one is ready.
+    public Uri? Url
+    {
+        get => _url;
+        set
+        {
+            if (_url?.OriginalString == value?.OriginalString) return;
+            _url = value;
+            _request++;
+            if (value is null)
+            {
+                Clear();
+                return;
+            }
+            if (ImageSurfaces.Cached(value, _maxPixel) is { } cached) Show(value, cached, fade: false);
+            else if (IsLoaded) Load();
+        }
     }
 
     /// 0 is black and white, 1 full colour. Animated over `seconds`.
@@ -271,51 +308,206 @@ public sealed class RemoteImage : Grid
     {
         _saturation = value;
         if (_effect is null) return;
-        if (seconds <= 0) { _effect.Properties.InsertScalar("Saturation.Saturation", (float)value); return; }
-        var animation = _effect.Compositor.CreateScalarKeyFrameAnimation();
-        animation.InsertKeyFrame(1, (float)value);
+        if (seconds <= 0)
+        {
+            _effect.StopAnimation("Saturation.Saturation");
+            _effect.Properties.InsertScalar("Saturation.Saturation", (float)value);
+            return;
+        }
+        var animation = _compositor.CreateScalarKeyFrameAnimation();
+        animation.InsertKeyFrame(1, (float)value, Motion.EaseInOut(_compositor));
         animation.Duration = TimeSpan.FromSeconds(seconds);
         _effect.StartAnimation("Saturation.Saturation", animation);
     }
 
-    private async Task LoadAsync(Compositor compositor)
+    private async void Load()
     {
-        if (_url is null || _sprite is not null || _container is null) return;
-        var stream = await ImageBytes.StreamAsync(_url);
-        if (stream is null) return;
-        var surface = LoadedImageSurface.StartLoadFromStream(stream);
-        var loaded = new TaskCompletionSource<bool>();
-        surface.LoadCompleted += (_, e) => loaded.TrySetResult(e.Status == LoadedImageSourceLoadStatus.Success);
-        if (!await loaded.Task) return;
+        try
+        {
+            if (_url is not { } url || _shownKey == ImageSurfaces.Key(url, _maxPixel)) return;
+            var request = ++_request;
+            var surface = await ImageSurfaces.LoadAsync(url, _maxPixel);
+            // A newer address took this one's place while it loaded.
+            if (request != _request || surface is null) return;
+            Show(url, surface, fade: true);
+        }
+        catch (Exception)
+        {
+            // The placeholder stays.
+        }
+    }
 
-        var brush = compositor.CreateSurfaceBrush(surface);
-        brush.Stretch = _fill ? CompositionStretch.UniformToFill : CompositionStretch.Uniform;
-        brush.HorizontalAlignmentRatio = 0.5f;
-        brush.VerticalAlignmentRatio = _fill ? 0.5f : 0.5f;
-        var effect = new SaturationEffect { Name = "Saturation", Saturation = (float)_saturation, Source = new CompositionEffectSourceParameter("Image") };
-        var factory = compositor.CreateEffectFactory(effect, ["Saturation.Saturation"]);
-        _effect = factory.CreateBrush();
-        _effect.SetSourceParameter("Image", brush);
-        _sprite = compositor.CreateSpriteVisual();
-        _sprite.Brush = _effect;
-        _container.Children.InsertAtTop(_sprite);
-        Layout();
-        // The image covers the placeholder once it's there.
-        if (Children.Count > 1 && Children[0] is UIElement placeholder) placeholder.Opacity = 0;
+    private void Show(Uri url, LoadedImageSurface surface, bool fade)
+    {
+        if (_surfaceBrush is null || _sprite is null)
+        {
+            _surfaceBrush = _compositor.CreateSurfaceBrush(surface);
+            _surfaceBrush.Stretch = _fill ? CompositionStretch.UniformToFill : CompositionStretch.Uniform;
+            _surfaceBrush.HorizontalAlignmentRatio = 0.5f;
+            _surfaceBrush.VerticalAlignmentRatio = 0.5f;
+            _effect = ImageSurfaces.EffectBrush(_compositor, _blur);
+            _effect.Properties.InsertScalar("Saturation.Saturation", (float)_saturation);
+            _effect.SetSourceParameter("Image", _surfaceBrush);
+            _sprite = _compositor.CreateSpriteVisual();
+            _sprite.Brush = _effect;
+            _container.Children.InsertAtTop(_sprite);
+            Layout();
+        }
+        else
+        {
+            _surfaceBrush.Surface = surface;
+        }
+        _shownKey = ImageSurfaces.Key(url, _maxPixel);
+        if (fade && FadeSeconds > 0)
+        {
+            var animation = _compositor.CreateScalarKeyFrameAnimation();
+            animation.InsertKeyFrame(0, 0);
+            animation.InsertKeyFrame(1, 1, Motion.EaseOut(_compositor));
+            animation.Duration = TimeSpan.FromSeconds(FadeSeconds);
+            _sprite.StartAnimation("Opacity", animation);
+        }
+        else
+        {
+            _sprite.StopAnimation("Opacity");
+            _sprite.Opacity = 1;
+        }
+        // A fitted image (a site icon) replaces its placeholder; a filled one covers it anyway.
+        if (!_fill && _placeholder is not null) _placeholder.Opacity = 0;
+    }
+
+    private void Clear()
+    {
+        _shownKey = null;
+        if (_sprite is not null)
+        {
+            _container.Children.Remove(_sprite);
+            _sprite = null;
+            _surfaceBrush = null;
+            _effect = null;
+        }
+        if (_placeholder is not null) _placeholder.Opacity = 1;
     }
 
     private void Layout()
     {
-        if (_sprite is null || _container is null) return;
+        if (_sprite is null) return;
         var size = new System.Numerics.Vector2((float)ActualWidth, (float)ActualHeight);
         _sprite.Size = size;
         if (_cornerRadius > 0)
         {
-            var clip = _container.Compositor.CreateRectangleClip(0, 0, size.X, size.Y);
+            var clip = _compositor.CreateRectangleClip(0, 0, size.X, size.Y);
             var r = new System.Numerics.Vector2((float)_cornerRadius);
             clip.TopLeftRadius = clip.TopRightRadius = clip.BottomLeftRadius = clip.BottomRightRadius = r;
             _container.Clip = clip;
         }
+    }
+}
+
+/// Decoded images, shared by every `RemoteImage` that shows the same address at the same size, and
+/// kept (least recently used out first) up to `CostLimit` bytes of pixels: the Mac's ImagePipeline
+/// memory cache. UI thread only.
+public static class ImageSurfaces
+{
+    private sealed record Entry(string Key, LoadedImageSurface Surface, long Cost);
+
+    private static readonly Dictionary<string, LinkedListNode<Entry>> Map = [];
+    private static readonly LinkedList<Entry> Order = new();
+    private static readonly Dictionary<string, Task<LoadedImageSurface?>> Loading = [];
+    private static readonly Dictionary<double, CompositionEffectFactory> Factories = [];
+    private static Compositor? _factoryCompositor;
+    private static long _cost;
+
+    public static long CostLimit { get; set; } = 256L * 1024 * 1024;
+
+    public static string Key(Uri url, int maxPixel) => $"{maxPixel}|{url.OriginalString}";
+
+    /// The decoded image if it's already here.
+    public static LoadedImageSurface? Cached(Uri url, int maxPixel)
+    {
+        if (!Map.TryGetValue(Key(url, maxPixel), out var node)) return null;
+        Order.Remove(node);
+        Order.AddFirst(node);
+        return node.Value.Surface;
+    }
+
+    /// Decodes it, once per address and size however many ask at the same time.
+    public static Task<LoadedImageSurface?> LoadAsync(Uri url, int maxPixel)
+    {
+        if (Cached(url, maxPixel) is { } cached) return Task.FromResult<LoadedImageSurface?>(cached);
+        var key = Key(url, maxPixel);
+        if (Loading.TryGetValue(key, out var running)) return running;
+        var task = FetchAsync(url, maxPixel, key);
+        if (!task.IsCompleted) Loading[key] = task;
+        return task;
+    }
+
+    /// Starts loading so the image is ready before it's shown, like scrubbing through saved frames.
+    public static void Preload(Uri url, int maxPixel) => _ = LoadAsync(url, maxPixel);
+
+    private static async Task<LoadedImageSurface?> FetchAsync(Uri url, int maxPixel, string key)
+    {
+        try
+        {
+            using var stream = await ImageBytes.StreamAsync(url);
+            if (stream is null) return null;
+            var surface = LoadedImageSurface.StartLoadFromStream(stream, new Windows.Foundation.Size(maxPixel, maxPixel));
+            var loaded = new TaskCompletionSource<bool>();
+            surface.LoadCompleted += (_, e) => loaded.TrySetResult(e.Status == LoadedImageSourceLoadStatus.Success);
+            if (!await loaded.Task)
+            {
+                surface.Dispose();
+                return null;
+            }
+            var size = surface.DecodedPhysicalSize;
+            Add(new Entry(key, surface, (long)(size.Width * size.Height * 4)));
+            return surface;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+        finally
+        {
+            Loading.Remove(key);
+        }
+    }
+
+    private static void Add(Entry entry)
+    {
+        if (Map.Remove(entry.Key, out var old))
+        {
+            Order.Remove(old);
+            _cost -= old.Value.Cost;
+        }
+        Map[entry.Key] = Order.AddFirst(entry);
+        _cost += entry.Cost;
+        // Images still on screen keep their surface; the cache only lets go of it.
+        while (_cost > CostLimit && Order.Last is { } last && last != Order.First)
+        {
+            Order.RemoveLast();
+            Map.Remove(last.Value.Key);
+            _cost -= last.Value.Cost;
+        }
+    }
+
+    /// Saturation over the image, with a Gaussian blur under it when `blur` is above 0. One factory
+    /// per blur amount, since making one compiles the effect.
+    internal static CompositionEffectBrush EffectBrush(Compositor compositor, double blur)
+    {
+        if (!ReferenceEquals(_factoryCompositor, compositor))
+        {
+            Factories.Clear();
+            _factoryCompositor = compositor;
+        }
+        if (!Factories.TryGetValue(blur, out var factory))
+        {
+            Windows.Graphics.Effects.IGraphicsEffectSource source = new CompositionEffectSourceParameter("Image");
+            if (blur > 0) source = new GaussianBlurEffect { Name = "Blur", BlurAmount = (float)blur, BorderMode = EffectBorderMode.Hard, Source = source };
+            var effect = new SaturationEffect { Name = "Saturation", Saturation = 1, Source = source };
+            factory = compositor.CreateEffectFactory(effect, ["Saturation.Saturation"]);
+            Factories[blur] = factory;
+        }
+        return factory.CreateBrush();
     }
 }
 
@@ -331,10 +523,13 @@ public static class Posters
         var mono = title.Status == TitleStatus.Watched && !keepsColour;
         image.SetSaturation(mono ? 0 : 1, 0);
         var frame = new Border { Child = image, CornerRadius = new CornerRadius(cornerRadius) };
+        // The 2:3 shape comes first and the image is cropped to it, so an odd poster can't push out
+        // of its column. Without a width it fills the width it's given.
+        FrameworkElement shaped = frame;
         if (width is { } w) { frame.Width = w; frame.Height = w * 1.5; }
-        else frame.SizeChanged += (_, e) => { if (Math.Abs(frame.Height - e.NewSize.Width * 1.5) > 0.5) frame.Height = e.NewSize.Width * 1.5; };
-        if (mono) frame.OnHover(on => image.SetSaturation(on ? 1 : 0));
-        return frame;
+        else shaped = Ui.AspectRatio(frame, 1.5);
+        if (mono) shaped.OnHover(on => image.SetSaturation(on ? 1 : 0));
+        return shaped;
     }
 
     /// With no poster to show, the name becomes the poster: a title card.
@@ -354,4 +549,28 @@ public static class Posters
         var image = new RemoteImage(url, new Grid { Children = { initial } }, fill: false);
         return new Border { Child = image, Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.22) };
     }
+}
+
+/// Dates the way the Mac's DateText writes them. `Relative` is in Formats.cs (the misc screens port).
+public static partial class DateText
+{
+    /// "Today", "Yesterday", "Thursday, November 6", or with the year when it isn't this one.
+    public static string Day(DateTimeOffset date, DateTimeOffset? now = null)
+    {
+        var culture = System.Globalization.CultureInfo.CurrentCulture;
+        var local = date.ToLocalTime();
+        var today = (now ?? DateTimeOffset.Now).ToLocalTime().Date;
+        if (local.Date == today) return "Today";
+        if (local.Date == today.AddDays(-1)) return "Yesterday";
+        var format = culture.DateTimeFormat;
+        // The Mac's localized "EEEEdMMMM" and "EEEEdMMMMyyyy" templates.
+        var pattern = local.Year == today.Year
+            ? "dddd, " + format.MonthDayPattern
+            : format.LongDatePattern.Contains("dddd", StringComparison.Ordinal) ? format.LongDatePattern : "dddd " + format.LongDatePattern;
+        return local.ToString(pattern, culture);
+    }
+
+    /// The short time, "9:41 PM" or "21:41" as Windows is set.
+    public static string Time(DateTimeOffset date) =>
+        date.ToLocalTime().ToString("t", System.Globalization.CultureInfo.CurrentCulture);
 }

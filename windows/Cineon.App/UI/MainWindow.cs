@@ -45,6 +45,8 @@ public sealed class MainWindow : Window
 
         _root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(TopBar.Height) });
         _root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        // The film's light, under everything (RootView's AmbientLight).
+        _root.Children.Add(new AmbientLight(app).Cell(row: 0, rowSpan: 2));
         _pages.Cell(row: 0, rowSpan: 2);
         _topBar.Cell(row: 0);
         _overlays.Cell(row: 0, rowSpan: 2);
