@@ -67,4 +67,7 @@ existing project, run `npx convex dev --once --configure existing --team olehryl
 
 - Project: `cineon` (team `olehrylskyj`). Dashboard: https://dashboard.convex.dev/t/olehrylskyj/cineon
 - Dev deployment `stoic-pelican-635`. URL: **https://stoic-pelican-635.eu-west-1.convex.cloud**
-  (the value for `CineonTogetherURL` in `Info.plist`).
+  (`CINEON_TOGETHER_URL` for Debug builds and the end-to-end tests).
+- Production deployment `admired-mouse-481`. URL: **https://admired-mouse-481.eu-west-1.convex.cloud**
+  (`CINEON_TOGETHER_URL` for Release builds, which is what people install). Run `npx convex deploy`
+  after changing the functions, before releasing an app that needs them.

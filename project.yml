@@ -32,8 +32,8 @@ settings:
       # The Together server. Tests and development use the dev deployment.
       CINEON_TOGETHER_URL: https://stoic-pelican-635.eu-west-1.convex.cloud
     Release:
-      # Point this at the production deployment once it exists (`cd server && npx convex deploy`).
-      CINEON_TOGETHER_URL: https://stoic-pelican-635.eu-west-1.convex.cloud
+      # Installed copies use the production deployment (`cd server && npx convex deploy`).
+      CINEON_TOGETHER_URL: https://admired-mouse-481.eu-west-1.convex.cloud
       SWIFT_OPTIMIZATION_LEVEL: "-O"
       SWIFT_COMPILATION_MODE: wholemodule
       ONLY_ACTIVE_ARCH: NO
