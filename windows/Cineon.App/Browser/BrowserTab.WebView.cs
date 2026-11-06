@@ -28,6 +28,10 @@ public sealed partial class BrowserTab
     private string? _pendingMainUrl;
     /// A download took this navigation over, so its failure isn't a failure.
     private bool _downloadTookOver;
+    /// The main-frame navigation in flight, so a cancelled or replaced one's end is ignored.
+    private ulong? _navigationId;
+    /// The host of `_documentUrl`, worked out once per page rather than per request.
+    private (string? Url, string? Host) _documentHost;
 
     /// The control on screen, for the window to place. Null while hibernated and for helpers.
     public WebView2? Control => _control;
@@ -35,7 +39,10 @@ public sealed partial class BrowserTab
     /// The ready WebView2, for capture and debugging. Null until it's ready.
     public CoreWebView2? Core => _core;
 
-    public bool HasWebView => _control is not null || _headless is not null;
+    public bool HasWebView => _control is not null || _headless is not null || _isMakingHelper;
+
+    /// A helper's parked web view is on its way, so a second one mustn't be started.
+    private bool _isMakingHelper;
 
     // MARK: Lifecycle
 
@@ -97,6 +104,8 @@ public sealed partial class BrowserTab
         }
         finally
         {
+            // A pop-up whose tab went away must not open in a window of WebView2's own.
+            if (popup is not null && generation != _generation) popup.Handled = true;
             deferral?.Complete();
         }
     }
@@ -108,9 +117,18 @@ public sealed partial class BrowserTab
         IsHibernated = false;
         var generation = _generation;
         _pendingNavigation ??= Url;
+        _isMakingHelper = true;
         Safe.Fire("helper web view", async () =>
         {
-            var headless = await HeadlessWebView.CreateAsync(Session.Web);
+            HeadlessWebView? headless;
+            try
+            {
+                headless = await HeadlessWebView.CreateAsync(Session.Web);
+            }
+            finally
+            {
+                if (generation == _generation) _isMakingHelper = false;
+            }
             if (headless is null) return;
             if (generation != _generation)
             {
@@ -248,11 +266,13 @@ public sealed partial class BrowserTab
         }
         _headless?.Close();
         _headless = null;
+        _isMakingHelper = false;
         MediaFrame = null;
         _hasMediaFrame = false;
         _mediaFrameUrl = null;
         _documentUrl = null;
         _pendingMainUrl = null;
+        _navigationId = null;
         _sniffed.Clear();
         ForgetSources();
         IsLoading = false;
@@ -358,6 +378,7 @@ public sealed partial class BrowserTab
             return;
         }
         _pendingMainUrl = raw;
+        _navigationId = args.NavigationId;
         _missingPageUrl = null;
         _downloadTookOver = false;
         Failure = null;
@@ -445,6 +466,9 @@ public sealed partial class BrowserTab
 
     private void NavigationCompleted(CoreWebView2 core, CoreWebView2NavigationCompletedEventArgs args)
     {
+        // One the policy cancelled, or one another navigation replaced.
+        if (_navigationId is { } current && args.NavigationId != current) return;
+        _navigationId = null;
         _trustedNavigation = false;
         IsLoading = false;
         Progress = 1;
@@ -589,8 +613,8 @@ public sealed partial class BrowserTab
         var type = (ResourceType)(int)args.ResourceContext;
         var isMainFrame = type == ResourceType.Document && uri == _pendingMainUrl;
         var document = isMainFrame ? uri : _documentUrl ?? _pendingMainUrl;
-        var pageHost = Urls.Parse(document) is { } page ? WatchTracker.Host(page) : null;
-        if (Session.Shields.ShieldsOff(pageHost)) return;
+        if (_documentHost.Url != document) _documentHost = (document, Urls.Parse(document) is { } page ? WatchTracker.Host(page) : null);
+        if (Session.Shields.ShieldsOff(_documentHost.Host)) return;
         if (rules.Match(uri, isMainFrame ? null : document, type, isMainFrame) != Decision.Block) return;
         args.Response = core.Environment.CreateWebResourceResponse(null, 403, "Blocked", "");
         Blocked = Blocked with { Ads = Blocked.Ads + 1 };

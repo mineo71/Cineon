@@ -216,6 +216,10 @@ public sealed class EpisodeAutopilot
         tab.ShowBanner("skipped", "Skipped intro", [("undo", "Undo", false)], timeout: 6);
     }
 
+    /// A banner button, as the tests press it (the Mac's debug `/banner`).
+    public void HandleBanner(string banner, string action, BrowserTab tab) =>
+        HandleBanner(JsonSerializer.SerializeToElement(new Dictionary<string, string> { ["banner"] = banner, ["action"] = action }), tab);
+
     public void HandleBanner(JsonElement body, BrowserTab tab)
     {
         if (body.Text("banner") is not { } banner || body.Text("action") is not { } action) return;

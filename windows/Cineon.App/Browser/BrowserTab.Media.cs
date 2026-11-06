@@ -273,7 +273,7 @@ public sealed partial class BrowserTab
         if (kind is null)
         {
             string? type = null;
-            try { type = response.GetHeader("Content-Type"); }
+            try { if (response.Contains("Content-Type")) type = response.GetHeader("Content-Type"); }
             catch (Exception) { }
             if (type is not null && (type.Contains("mpegurl", StringComparison.OrdinalIgnoreCase))) kind = MediaSourceKind.Hls;
         }
@@ -367,8 +367,19 @@ public sealed partial class BrowserTab
                 options.FindTerm = text;
                 options.SuppressDefaultFindDialog = true;
                 options.ShouldHighlightAllMatches = true;
-                await find.StartAsync(options);
-                for (var wait = 0; wait < 6 && find.MatchCount < 0; wait++) await Task.Delay(50);
+                // The count arrives a moment after the search starts.
+                var counted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                Windows.Foundation.TypedEventHandler<CoreWebView2Find, object> handler = (_, _) => counted.TrySetResult();
+                find.MatchCountChanged += handler;
+                try
+                {
+                    await find.StartAsync(options);
+                    await Task.WhenAny(counted.Task, Task.Delay(400));
+                }
+                finally
+                {
+                    find.MatchCountChanged -= handler;
+                }
                 if (backwards && find.MatchCount > 0) find.FindPrevious();
                 return find.MatchCount > 0;
             }
