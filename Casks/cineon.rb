@@ -1,6 +1,6 @@
 cask "cineon" do
-  version "1.0.0"
-  sha256 "2c52c8bfcbbf34787a49c92ec3462c587e52e6eef935134b436733b8a3a95fb5"
+  version "1.0.1"
+  sha256 "f30730f1e2d0a6bf20632b8a5588f907aaedb25b7e4ab6c1d970d672dd8ce918"
 
   url "https://github.com/mineo71/Cineon/releases/download/v#{version}/Cineon-#{version}.dmg"
   name "Cineon"
