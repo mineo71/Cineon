@@ -40,6 +40,8 @@ jobs:
           $data = Join-Path $env:RUNNER_TEMP "cineon-data"
           New-Item -ItemType Directory -Force $data | Out-Null
           $env:CINEON_DATA_DIR = $data
+          # The runner's screen is 1024×768; ask for more room so the 1360-wide window fits.
+          try { Set-DisplayResolution -Width 1920 -Height 1080 -Force -ErrorAction Stop } catch { Write-Host "Resolution: $($_.Exception.Message)" }
           $exe = Resolve-Path "Cineon.App/bin/Debug/net10.0-windows10.0.19041.0/win-x64/Cineon.exe"
           $p = Start-Process $exe -PassThru
           Start-Sleep -Seconds 15
