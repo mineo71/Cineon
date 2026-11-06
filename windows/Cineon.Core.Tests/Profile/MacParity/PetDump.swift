@@ -1,9 +1,10 @@
 // Dumps what the Mac's pixel pet makes of a fixed set of inputs, so the Windows port can be checked
-// against it byte for byte. PetMacParity.cs builds the same text in C# and compares FNV-1a hashes; the
+// against it byte for byte. PetDump.cs builds the same text in C#, and PixelPetMacParityTests compares FNV-1a hashes; the
 // constants there come from this program.
 //
 // Run on a Mac, from the repo root:
-//   swiftc -O -parse-as-library Cineon/Profile/PixelPet.swift windows/Cineon.Core.Tests/Profile/MacParity/PetDump.swift -o /tmp/petdump
+//   swiftc -O -swift-version 6 -default-isolation MainActor -parse-as-library Cineon/Profile/PixelPet.swift \
+//     windows/Cineon.Core.Tests/Profile/MacParity/PetDump.swift -o /tmp/petdump
 //   /tmp/petdump /tmp/petdump-out
 // It prints one hash per section and writes each section to <dir>/<section>.txt. To diff against Windows,
 // run the tests with CINEON_PET_DUMP=<other dir> and diff the two folders.
