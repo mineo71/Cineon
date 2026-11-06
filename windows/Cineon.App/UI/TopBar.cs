@@ -76,16 +76,7 @@ public sealed class TopBar : Component
             .Padding(3, 0);
         var toolsCapsule = BarCapsule(tools.Size(height: 34), OnHero);
 
-        var avatar = Buttons.Make(
-            new Border
-            {
-                Width = 34, Height = 34, CornerRadius = new CornerRadius(17),
-                Background = new SolidColorBrush(p.Raised2),
-                BorderBrush = _app.Route == Route.Profile ? p.Gold : new SolidColorBrush(OnHero && p.IsDark ? Palette.Grey(1, 0.16) : p.Line),
-                BorderThickness = new Thickness(1.5),
-                Child = Ui.Icon(Glyph.People, 14, p.Ink2).Centered(),
-            },
-            () => _app.Go(Route.Profile), help: "My profile");
+        var avatar = AvatarButton(p);
 
         var leading = Ui.HStack(0, logo).Padding(16, 0, 0, 0);
         var middle = new SectionTabs(_app, Style(_width), OnHero);
@@ -98,6 +89,43 @@ public sealed class TopBar : Component
         // The drag area outlives each render, so it leaves the old layout before joining the new one.
         if (VisualTreeHelper.GetParent(DragArea) is Panel previous) previous.Children.Remove(DragArea);
         return Ui.ZStack(DragArea, bar);
+    }
+
+    /// Your pet, which is you (the Mac's AvatarButton). Click for your profile; right-click has the rest.
+    private Button AvatarButton(Palette p)
+    {
+        var pet = new PixelPetView(_app.Session.Pet, 28, animated: false)
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var fill = OnHero ? Palette.WithOpacity(p.Canvas, p.IsDark ? 0.55 : 0.5) : p.Raised2;
+        var face = new Grid { Width = 34, Height = 34, Background = new SolidColorBrush(fill), Children = { pet } }.ClipRounded(17);
+        var ring = new Microsoft.UI.Xaml.Shapes.Ellipse
+        {
+            Width = 34,
+            Height = 34,
+            Stroke = _app.Route == Route.Profile ? p.Gold : new SolidColorBrush(OnHero && p.IsDark ? Palette.Grey(1, 0.16) : p.Line),
+            StrokeThickness = 1,
+            IsHitTestVisible = false,
+        };
+        var button = Buttons.Make(new Grid { Width = 34, Height = 34, Children = { face, ring } },
+            () => _app.Go(Route.Profile), help: $"{_app.Session.Profile.Name}: profile");
+
+        var menu = new MenuFlyout();
+        void Item(string text, Action action)
+        {
+            var item = new MenuFlyoutItem { Text = text };
+            item.Click += (_, _) => action();
+            menu.Items.Add(item);
+        }
+        Item("Profile", () => _app.Go(Route.Profile));
+        Item("Who's watching…", () => _app.IsProfilePickerVisible = true);
+        menu.Items.Add(new MenuFlyoutSeparator());
+        Item(p.IsDark ? "Light theme" : "Dark theme", _app.ToggleTheme);
+        Item("Settings…", () => _app.Go(Route.Settings));
+        button.ContextFlyout = menu;
+        return button;
     }
 
     /// Over a film the bar is a shadow falling from the top. Elsewhere it's the room's black.

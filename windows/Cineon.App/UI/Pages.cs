@@ -7,6 +7,9 @@ public static class Pages
 {
     public static UIElement For(AppModel app) => app.Route switch
     {
+        Route.Together => new TogetherPage(app),
+        Route.Profile => new ProfilePage(app),
+        Route.Settings => new SettingsPage(app),
         _ => Placeholder(app.Route.ToString()),
     };
 
