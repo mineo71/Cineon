@@ -133,7 +133,7 @@ public sealed class ProfileSession : Observable
         foreach (var title in Library.Titles.Values)
         {
             if (title.MetadataChecked || title.ImdbId is not null) continue;
-            // TODO(after core merge): Metadata.Enrich(title.Id, inBackground: true)
+            this.Metadata.Enrich(title.Id, inBackground: true);
         }
     }
 
@@ -146,7 +146,7 @@ public sealed class ProfileSession : Observable
         Alerts.Stop();
         // TODO(after core merge): Cloud.Stop()
         Together.Stop();
-        // TODO(after core merge): Downloads.SuspendAll()
+        this.Downloads.SuspendAll();
         Shields.Flush();
         Browser.Shutdown();
         Web.Teardown();
@@ -164,8 +164,8 @@ public sealed class ProfileSession : Observable
         {
             var titles = Library.Titles.Values;
             var ratingSum = titles.Sum(t => (t.RatingHalves ?? 0) + (t.Status == TitleStatus.Watched ? 1000 : 0));
-            // TODO(after core merge): Downloads.Items, as the Mac counts them, instead of reading the table.
-            var downloads = Try(() => Db.AllDownloads(), []);
+            // As the Mac counts them: the download center's list.
+            var downloads = this.Downloads.Items;
             var key = $"{Library.Revision}|{Library.Titles.Count}|{ratingSum}|{downloads.Count}";
             if (_statsCache is { } cache && cache.Key == key) return cache.Stats;
             var sessions = Try<IReadOnlyList<WatchSession>>(() => Db.Sessions(limit: 100_000), Library.Sessions);

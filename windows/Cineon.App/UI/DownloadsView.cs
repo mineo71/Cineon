@@ -180,7 +180,6 @@ public sealed class DownloadRow : Component
         _session = session;
         _item = item;
         _fraction = fraction;
-        Content = _root;
         PointerEntered += (_, _) => SetHovered(true);
         PointerExited += (_, _) => SetHovered(false);
         PointerCanceled += (_, _) => SetHovered(false);

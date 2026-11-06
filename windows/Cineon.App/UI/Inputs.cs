@@ -50,11 +50,12 @@ public static class Inputs
         return box;
     }
 
-    /// Puts the palette's colours on a field. Call again after the theme changes.
-    public static void Paint(TextBox box)
+    /// Puts the palette's colours on a field. Call again after the theme changes. `plain` leaves the
+    /// fill out, for a field that sits in its own panel (the command bar's).
+    public static void Paint(TextBox box, bool plain = false)
     {
         var p = Theme.P;
-        var fill = new SolidColorBrush(p.Raised);
+        var fill = new SolidColorBrush(plain ? Microsoft.UI.Colors.Transparent : p.Raised);
         var ink = new SolidColorBrush(p.Ink);
         var placeholder = new SolidColorBrush(p.Ink3);
         var clear = new SolidColorBrush(Microsoft.UI.Colors.Transparent);

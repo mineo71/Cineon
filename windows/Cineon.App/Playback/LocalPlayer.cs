@@ -77,9 +77,12 @@ public sealed class LocalPlayback : Observable
     public DownloadItem DownloadItem => _item;
 
     /// The player's speed. A paused MediaPlayer keeps its rate, where the Mac's AVPlayer reads 0.
-    public double Rate => Player.PlaybackSession.PlaybackRate is > 0 and var rate ? rate : 1;
+    public double Rate => !_isStopped && Player.PlaybackSession.PlaybackRate is > 0 and var rate ? rate : 1;
 
     public bool IsFading => _fadeTimer is not null;
+
+    /// Stopped: its place is saved and its player let go of the file.
+    public bool IsStopped => _isStopped;
 
     private readonly ProfileSession _session;
     private readonly DownloadItem _item;

@@ -38,7 +38,8 @@ public sealed class LocalPlayerView : Component
     {
         HorizontalAlignment = HorizontalAlignment.Right,
         VerticalAlignment = VerticalAlignment.Bottom,
-        Margin = new Thickness(28),
+        // The Mac's 28, plus the height of the transport controls, which span the bottom here.
+        Margin = new Thickness(28, 28, 28, 28 + 88),
         ChildrenTransitions = new TransitionCollection { new EntranceThemeTransition { FromHorizontalOffset = 60, FromVerticalOffset = 0, IsStaggeringEnabled = false } },
     };
     private readonly Grid _surface = new() { Background = new SolidColorBrush(Microsoft.UI.Colors.Black), AllowDrop = true };
@@ -198,9 +199,11 @@ public sealed class LocalPlayerView : Component
         _shown = playback;
         if (playback is null) return;
         playback.Changed += Invalidate;
+        _captions.Show(playback);
+        // A stopped playback has let go of its player.
+        if (playback.IsStopped) return;
         playback.SetShown(true);
         _element.SetMediaPlayer(playback.Player);
-        _captions.Show(playback);
     }
 
     // MARK: Bar
