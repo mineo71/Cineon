@@ -35,32 +35,40 @@ jobs:
       - name: Build the app
         run: dotnet build Cineon.App -c Debug -r win-x64 -v minimal
 
-      - name: Launch and screenshot
+      - name: Launch and screenshot each screen
         run: |
-          $data = Join-Path $env:RUNNER_TEMP "cineon-data"
-          New-Item -ItemType Directory -Force $data | Out-Null
-          $env:CINEON_DATA_DIR = $data
-          # The runner's screen is 1024×768; ask for more room so the 1360-wide window fits.
           try { Set-DisplayResolution -Width 1920 -Height 1080 -Force -ErrorAction Stop } catch { Write-Host "Resolution: $($_.Exception.Message)" }
-          $exe = Resolve-Path "Cineon.App/bin/Debug/net10.0-windows10.0.19041.0/win-x64/Cineon.exe"
-          $p = Start-Process $exe -PassThru
-          Start-Sleep -Seconds 15
           Add-Type -AssemblyName System.Windows.Forms, System.Drawing
-          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
-          [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
           New-Item -ItemType Directory -Force ../artifacts | Out-Null
-          $bmp.Save("../artifacts/launch.png")
-          if ($p.HasExited) {
-            Write-Host "Cineon exited with code $($p.ExitCode)"
-            if (Test-Path "$data/crash.log") { Get-Content "$data/crash.log" }
-            Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = (Get-Date).AddMinutes(-5) } -ErrorAction SilentlyContinue |
-              Where-Object { $_.ProviderName -in 'Application Error', '.NET Runtime', 'Windows Error Reporting' } |
-              Select-Object -First 6 | ForEach-Object { $_.Message }
-            exit 1
+          $exe = Resolve-Path "Cineon.App/bin/Debug/net10.0-windows10.0.19041.0/win-x64/Cineon.exe"
+          $failed = $false
+          $shots = @('home:dark', 'library:dark', 'timeline:dark', 'downloads:dark', 'together:dark', 'profile:dark', 'rate:dark', 'settings:dark', 'home:light', 'settings:light')
+          foreach ($shot in $shots) {
+            $route, $theme = $shot.Split(':')
+            $data = Join-Path $env:RUNNER_TEMP "cineon-$route-$theme"
+            New-Item -ItemType Directory -Force $data | Out-Null
+            $env:CINEON_DATA_DIR = $data
+            $env:CINEON_ROUTE = $route
+            $env:CINEON_THEME = $theme
+            $p = Start-Process $exe -PassThru
+            Start-Sleep -Seconds 12
+            $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+            $bmp.Save("../artifacts/$route-$theme.png")
+            if ($p.HasExited) {
+              $failed = $true
+              Write-Host "::error::Cineon exited on $shot with code $($p.ExitCode)"
+              if (Test-Path "$data/crash.log") { Get-Content "$data/crash.log" }
+              Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = (Get-Date).AddMinutes(-2) } -ErrorAction SilentlyContinue |
+                Where-Object { $_.ProviderName -in 'Application Error', '.NET Runtime' } | Select-Object -First 3 | ForEach-Object { $_.Message }
+            } else {
+              Stop-Process -Id $p.Id -Force
+              Start-Sleep -Seconds 2
+            }
+            if (Test-Path "$data/crash.log") { Copy-Item "$data/crash.log" "../artifacts/crash-$route-$theme.log" }
           }
-          Stop-Process -Id $p.Id -Force
-          Get-ChildItem $data -Recurse | Select-Object FullName, Length | Format-Table -AutoSize
+          if ($failed) { exit 1 }
 
       - uses: actions/upload-artifact@v4
         if: always()
