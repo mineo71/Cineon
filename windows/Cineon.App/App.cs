@@ -12,6 +12,7 @@ public sealed class App : Application, IXamlMetadataProvider
     private readonly XamlControlsXamlMetaDataProvider _types = new();
     private readonly string[] _args;
     private Window? _window;
+    public static AppModel Model { get; } = new();
 
     public App(string[] args)
     {
@@ -24,7 +25,7 @@ public sealed class App : Application, IXamlMetadataProvider
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         Resources.MergedDictionaries.Add(new XamlControlsResources());
-        _window = new Window { Title = "Cineon", Content = new TextBlock { Text = "Cineon" } };
+        _window = new UI.MainWindow(Model);
         _window.Activate();
     }
 
