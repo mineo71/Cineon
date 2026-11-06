@@ -444,4 +444,12 @@ final class PixelPetTests: XCTestCase {
             }
         }
     }
+
+    func testTwinklePhaseNeverLeavesTheTable() {
+        // Name 335 at 0.25 s used to round the Legend twinkle phase up to 6 and trap in the renderer.
+        let pet = PixelPet(species: .fox, stage: .legend, nameIndex: 335)
+        let frame = pet.frame(at: 0.25)
+        XCTAssertEqual(frame.sparkle, 5)
+        _ = pet.bitmap(frame: frame)
+    }
 }

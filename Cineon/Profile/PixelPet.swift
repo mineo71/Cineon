@@ -673,7 +673,8 @@ nonisolated extension PixelPet {
             frame.effect = .zzz
             frame.effectStep = Int(phase(2.8) / 0.4)
         }
-        if stage == .legend { frame.sparkle = Int(phase(1.8) / 0.3) }
+        // Floating point can round the last instant of a cycle up to 6, one past the twinkle table.
+        if stage == .legend { frame.sparkle = min(Int(phase(1.8) / 0.3), 5) }
         return frame
     }
 }
