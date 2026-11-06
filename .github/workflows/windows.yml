@@ -49,7 +49,14 @@ jobs:
           [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
           New-Item -ItemType Directory -Force ../artifacts | Out-Null
           $bmp.Save("../artifacts/launch.png")
-          if ($p.HasExited) { Write-Error "Cineon exited with code $($p.ExitCode)"; exit 1 }
+          if ($p.HasExited) {
+            Write-Host "Cineon exited with code $($p.ExitCode)"
+            if (Test-Path "$data/crash.log") { Get-Content "$data/crash.log" }
+            Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = (Get-Date).AddMinutes(-5) } -ErrorAction SilentlyContinue |
+              Where-Object { $_.ProviderName -in 'Application Error', '.NET Runtime', 'Windows Error Reporting' } |
+              Select-Object -First 6 | ForEach-Object { $_.Message }
+            exit 1
+          }
           Stop-Process -Id $p.Id -Force
           Get-ChildItem $data -Recurse | Select-Object FullName, Length | Format-Table -AutoSize
 
