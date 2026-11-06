@@ -4,6 +4,7 @@ using Cineon.App.UI;
 using Cineon.Core.Data;
 using Cineon.Core.Profile;
 using Cineon.Core.Shields;
+using Cineon.Core.Together;
 
 namespace Cineon.App;
 
@@ -32,14 +33,23 @@ public sealed class ProfileSession : Observable
     public RescueEngine Rescue { get; }
     public FrameCollector Frames { get; }
     public BrowserModel Browser { get; }
+    /// Watch parties, challenges and shared lists (Core's TogetherModel; the app side is TogetherHost.cs).
     public TogetherModel Together { get; }
     public EpisodeAlerts Alerts { get; }
+    /// Ratings and lists kept on the server too.
+    public CloudLibrary Cloud { get; }
 
     // TODO(port-browser): `WatchTracker Tracker` (Mac: tracker = WatchTracker(session: self)). The Mac's
     // ScriptRouter has no counterpart: each tab's ScriptBridge delivers its pages' messages to that tab.
     // TODO(after core merge): `MetadataService Metadata` (MetadataService(library) { settings.fetchMetadata }),
-    // `DownloadCenter Downloads`, `SeasonGrabber Seasons` and `CloudLibrary Cloud`, created here in the
-    // Mac's order (metadata before the browser; downloads, together, seasons, alerts, cloud after it).
+    // `DownloadCenter Downloads` and `SeasonGrabber Seasons`, created here in the Mac's order (metadata
+    // before the browser; downloads before together, seasons after it).
+
+#if DEBUG
+    private const string TogetherServer = TogetherClient.DevelopmentUrl;
+#else
+    private const string TogetherServer = TogetherClient.ProductionUrl;
+#endif
 
     /// The ad and tracker rules this person has switched on, as last applied.
     public ShieldEngine Rules { get; private set; } = ShieldEngine.Empty;
@@ -61,8 +71,11 @@ public sealed class ProfileSession : Observable
         Rescue = new RescueEngine(this);
         Frames = new FrameCollector(this);
         Browser = new BrowserModel(this);
-        Together = new TogetherModel(this);
+        // Built on the UI thread: its state changes and events come back here.
+        Together = new TogetherModel(profile, Library, new TogetherHost(this), new PartyPlayer(this),
+            TogetherClient.Configured(TogetherServer), SynchronizationContext.Current);
         Alerts = new EpisodeAlerts(this);
+        Cloud = new CloudLibrary(Library, Together, () => Settings);
 
         Library.SeedDefaultSitesIfNeeded();
     }
@@ -87,11 +100,8 @@ public sealed class ProfileSession : Observable
             {
                 foreach (var tab in Browser.Tabs) tab.ApplyVoiceBoost();
             }
-            if (value.SharePet != old.SharePet) Together.RefreshIdentity();
-            if (value.CloudBackup != old.CloudBackup && value.CloudBackup)
-            {
-                // TODO(after core merge): Cloud.Start()
-            }
+            if (value.SharePet != old.SharePet) _ = Together.RefreshIdentity();
+            if (value.CloudBackup != old.CloudBackup && value.CloudBackup) Cloud.Start();
             if (value.CaptionStyle != old.CaptionStyle)
             {
                 foreach (var tab in Browser.Tabs) tab.ApplyCaptions(force: true);
@@ -109,7 +119,7 @@ public sealed class ProfileSession : Observable
         _ = PruneFramesAsync();
         Together.Start();
         Alerts.Start();
-        // TODO(after core merge): Cloud.Start()
+        Cloud.Start();
     }
 
     private async Task PruneFramesAsync()
@@ -144,7 +154,7 @@ public sealed class ProfileSession : Observable
         // Kept, to carry on with next time.
         // TODO(after core merge): Seasons.Suspend()
         Alerts.Stop();
-        // TODO(after core merge): Cloud.Stop()
+        Cloud.Stop();
         Together.Stop();
         // TODO(after core merge): Downloads.SuspendAll()
         Shields.Flush();

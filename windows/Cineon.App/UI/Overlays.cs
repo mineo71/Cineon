@@ -26,8 +26,8 @@ public static class Overlays
     /// The command bar (CommandBar.swift). It places itself; the host only dims behind it.
     public static UIElement? CommandBar(AppModel app) => null;
 
-    /// "Who's watching?" (ProfilePicker.swift). Null shows a plain list of profiles.
-    public static UIElement? ProfilePicker(AppModel app) => null;
+    /// "Who's watching?" (ProfilePicker.swift, in UI/Pages/ProfilePickerView.cs).
+    public static UIElement ProfilePicker(AppModel app) => new ProfilePickerView(app);
 
     /// The launch animation (Splash.swift's SplashView). It sets `app.SplashVisible = false` when it's
     /// done; with none registered the splash is skipped.
@@ -78,7 +78,7 @@ public sealed class OverlayHost : Grid
         _commandBar.Show(app.IsCommandBarVisible ? true : null, () => Dimmed(0.3, app.CloseCommandBar,
             Overlays.CommandBar(app) ?? Placeholder("Search films and sites", app.CloseCommandBar)));
 
-        _picker.Show(app.IsProfilePickerVisible ? true : null, () => Overlays.ProfilePicker(app) ?? new PlainProfilePicker(app));
+        _picker.Show(app.IsProfilePickerVisible ? true : null, () => Overlays.ProfilePicker(app));
 
         _reel.Show(app.IsChangingReel ? true : null, () => new ReelChange());
 
@@ -218,34 +218,6 @@ public sealed class ReelChange : Grid
             story.Children.Add(turn);
             story.Begin();
         };
-    }
-}
-
-/// "Who's watching?" as a plain list, until the ProfilePicker port registers the real one.
-public sealed class PlainProfilePicker : Component
-{
-    private readonly AppModel _app;
-
-    public PlainProfilePicker(AppModel app)
-    {
-        _app = app;
-        Watch(app.Profiles);
-    }
-
-    protected override UIElement Render()
-    {
-        var p = Theme.P;
-        var people = Ui.HStack(12);
-        foreach (var profile in _app.Profiles.Profiles)
-        {
-            people.Children.Add(Buttons.Outline(profile.Name, () => _app.SwitchProfile(profile), large: true));
-        }
-        var content = Ui.VStack(34,
-                Ui.Text("Who's watching?", Typeface.Title(38)).Centered(),
-                people.Centered(),
-                Buttons.Outline("Close", () => _app.IsProfilePickerVisible = false).Centered())
-            .Centered();
-        return Ui.ZStack(new Border { Background = new SolidColorBrush(p.Canvas) }, content);
     }
 }
 
