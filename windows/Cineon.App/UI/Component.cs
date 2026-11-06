@@ -113,6 +113,14 @@ public abstract class Component : UserControl
         Add(() => subscribe(handler), () => unsubscribe(handler));
     }
 
+    /// An `EventHandler` event, like Core's `DownloadCenter.Changed` and `SeasonGrabber.Changed`.
+    /// `onChange` runs instead of a rebuild when given, for views that update in place.
+    protected void WatchHandler(Action<EventHandler> subscribe, Action<EventHandler> unsubscribe, Action? onChange = null)
+    {
+        EventHandler handler = (_, _) => (onChange ?? Invalidate)();
+        Add(() => subscribe(handler), () => unsubscribe(handler));
+    }
+
     private void Add(Action subscribe, Action unsubscribe)
     {
         _watches.Add((subscribe, unsubscribe));

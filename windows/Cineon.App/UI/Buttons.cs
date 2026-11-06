@@ -66,9 +66,11 @@ public static class Buttons
     }
 
     /// The one strong button on any screen, finished like the film strip in the logo.
-    public static Button Silver(string title, Action action, bool large = false, bool enabled = true)
+    /// `palette` draws it in another palette than the app's, like SwiftUI's `.environment(\.palette, .dark)`
+    /// over a film.
+    public static Button Silver(string title, Action action, bool large = false, bool enabled = true, Palette? palette = null)
     {
-        var p = Theme.P;
+        var p = palette ?? Theme.P;
         var text = Ui.Line(title, Typeface.Ui(large ? 15 : 13, Typeface.Semibold), p.OnSilver);
         var button = Make(text, action, (b, hovered, _) =>
         {
@@ -81,6 +83,19 @@ public static class Buttons
         button.Padding = large ? new Thickness(22, 11, 22, 11) : new Thickness(14, 7, 14, 7);
         button.BorderThickness = new Thickness(1);
         button.SizeChanged += (_, e) => button.CornerRadius = new CornerRadius(e.NewSize.Height / 2);
+        return button;
+    }
+
+    /// The silver button with an icon before its title, like SwiftUI's `Label(title, systemImage:)`.
+    public static Button Silver(string title, string glyph, Action action, bool large = false, bool enabled = true, Palette? palette = null)
+    {
+        var button = Silver(title, action, large, enabled, palette);
+        if (button.Content is TextBlock text)
+        {
+            button.Content = null;
+            var icon = Ui.Icon(glyph, large ? 13 : 11, (palette ?? Theme.P).OnSilver);
+            button.Content = Ui.HStack(large ? 7 : 6, icon, text);
+        }
         return button;
     }
 
@@ -98,10 +113,23 @@ public static class Buttons
         return button;
     }
 
-    /// A quiet button that fills on hover, like the Mac's HoverButtonStyle.
-    public static Button Hover(object content, Action action, double radius = 8, bool selected = false, Thickness? padding = null, bool enabled = true, string? help = null)
+    /// The outline button with an icon before its title.
+    public static Button Outline(string title, string glyph, Action action, bool large = false, bool enabled = true)
     {
-        var p = Theme.P;
+        var button = Outline(title, action, large, enabled);
+        if (button.Content is TextBlock text)
+        {
+            button.Content = null;
+            var icon = Ui.Icon(glyph, large ? 13 : 11, Theme.P.Ink);
+            button.Content = Ui.HStack(large ? 7 : 6, icon, text);
+        }
+        return button;
+    }
+
+    /// A quiet button that fills on hover, like the Mac's HoverButtonStyle.
+    public static Button Hover(object content, Action action, double radius = 8, bool selected = false, Thickness? padding = null, bool enabled = true, string? help = null, Palette? palette = null)
+    {
+        var p = palette ?? Theme.P;
         var button = Make(content, action, (b, hovered, pressed) =>
         {
             b.Background = new SolidColorBrush(selected || pressed ? p.Raised2 : hovered ? p.Raised : Microsoft.UI.Colors.Transparent);
@@ -111,11 +139,11 @@ public static class Buttons
         return button;
     }
 
-    public static Button Icon(string glyph, string label, Action action, double size = 13, bool enabled = true, Color? color = null)
+    public static Button Icon(string glyph, string label, Action action, double size = 13, bool enabled = true, Color? color = null, Palette? palette = null)
     {
-        var p = Theme.P;
+        var p = palette ?? Theme.P;
         var icon = Ui.Icon(glyph, size, enabled ? color ?? p.Ink2 : Palette.WithOpacity(p.Ink3, 0.6));
         var box = new Border { Width = 16, Height = 16, Child = icon };
-        return Hover(box, action, radius: 7, padding: new Thickness(5), enabled: enabled, help: label);
+        return Hover(box, action, radius: 7, padding: new Thickness(5), enabled: enabled, help: label, palette: palette);
     }
 }

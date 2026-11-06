@@ -7,6 +7,8 @@ public static class Pages
 {
     public static UIElement For(AppModel app) => app.Route switch
     {
+        Route.Downloads => new DownloadsPage(app),
+        Route.Player => new LocalPlayerView(app),
         _ => Placeholder(app.Route.ToString()),
     };
 
