@@ -64,7 +64,9 @@ public static class PageExtras
             const path = e.composedPath ? e.composedPath() : [];
             for (const node of path) {
               if (node && node.tagName && node.tagName.toUpperCase() === 'A' && hrefOf(node)) {
-                h.cineonLink.postMessage({ href: String(new URL(hrefOf(node), location.href)), top });
+                let href = hrefOf(node);
+                try { href = String(new URL(href, location.href)); } catch (_) {}
+                h.cineonLink.postMessage({ href, top });
                 return;
               }
             }
