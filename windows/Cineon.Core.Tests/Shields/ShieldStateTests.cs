@@ -23,9 +23,10 @@ public class ShieldStateTests
         {
             lock (Stats)
             {
-                Writes++;
                 var s = Stats.GetValueOrDefault(day);
                 Stats[day] = (s.Ads + ads, s.Popups + popups, s.Redirects + redirects, s.Overlays + overlays);
+                // Last, because the test waits on this count from another thread and then reads Stats.
+                Writes++;
             }
         }
     }
