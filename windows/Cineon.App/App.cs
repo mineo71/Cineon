@@ -1,3 +1,4 @@
+using Cineon.App.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Markup;
@@ -11,8 +12,10 @@ public sealed class App : Application, IXamlMetadataProvider
 {
     private readonly XamlControlsXamlMetaDataProvider _types = new();
     private readonly string[] _args;
-    private Window? _window;
-    public static AppModel Model { get; } = new();
+    private UI.MainWindow? _window;
+
+    /// The app's state. Made in OnLaunched, on the UI thread, before the window.
+    public static AppModel Model { get; private set; } = null!;
 
     public App(string[] args)
     {
@@ -25,8 +28,49 @@ public sealed class App : Application, IXamlMetadataProvider
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         Resources.MergedDictionaries.Add(new XamlControlsResources());
-        _window = new UI.MainWindow(Model);
-        _window.Activate();
+        Model = new AppModel();
+        var window = new UI.MainWindow(Model);
+        _window = window;
+        window.Closed += (_, _) => Quit();
+        window.Activate();
+        Model.AttachWindow(window, window.Handle);
+
+        // What the Mac's app delegate and CineonApp set up: notifications, the updater, links. None
+        // of them is worth failing the launch over.
+        Notifications.Install(window.DispatcherQueue);
+        JumpList.Install();
+        ProtocolRegistration.EnsureRegistered();
+        Guard("updater", () => UI.UpdatePrompt.Attach(window, Model));
+
+        // Later launches hand over their links; this one may have come with some too.
+        SingleInstance.OnActivated(activation => window.DispatcherQueue.TryEnqueue(() =>
+        {
+            window.BringToFront();
+            Guard("activation", () => Activation.Handle(activation, Model));
+        }));
+        Guard("launch", () => Activation.Handle(LaunchActivation(), Model, _args));
+    }
+
+    private static void Guard(string what, Action action)
+    {
+        try { action(); }
+        catch (Exception error) { CrashLog.Write(what, error); }
+    }
+
+    /// How this copy was started. A click on a notification while Cineon was closed only reads as
+    /// one once notifications are registered, so it's asked again after that.
+    private static Microsoft.Windows.AppLifecycle.AppActivationArguments? LaunchActivation()
+    {
+        if (!Notifications.IsRegistered) return SingleInstance.Launch;
+        try { return Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().GetActivatedEventArgs(); }
+        catch (Exception) { return SingleInstance.Launch; }
+    }
+
+    /// The Mac's applicationWillTerminate.
+    private static void Quit()
+    {
+        Model.PrepareToQuit();
+        Notifications.Uninstall();
     }
 
     public IXamlType GetXamlType(Type type) => _types.GetXamlType(type);
