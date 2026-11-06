@@ -12,6 +12,8 @@ public static class Pages
         Route.Together => new TogetherPage(app),
         Route.Profile => new ProfilePage(app),
         Route.Settings => new SettingsPage(app),
+        Route.Downloads => new DownloadsPage(app),
+        Route.Player => new LocalPlayerView(app),
         _ => Placeholder(app.Route.ToString()),
     };
 

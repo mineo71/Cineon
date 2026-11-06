@@ -61,9 +61,7 @@ public sealed partial class AppModel
         switch (ActivePlayer)
         {
             case ActivePlayer.Local local:
-                // TODO(after core merge): `Session.Downloads.NextEpisode(after: local.Playback.DownloadItem)`.
-                DownloadItem? next = null;
-                _ = local;
+                var next = Session.Downloads.NextEpisode(local.Playback.DownloadItem);
                 if (next is null)
                 {
                     Toasts.Show("The next episode isn't on this PC");
@@ -189,9 +187,7 @@ public sealed partial class AppModel
             FinishSleepTimer(paused: true);
             return;
         }
-        // TODO(after core merge): `Session.Downloads.NextEpisode(after: item)`.
-        DownloadItem? next = null;
-        if (!Settings.PlayNextDownload || next is null) return;
+        if (!Settings.PlayNextDownload || Session.Downloads.NextEpisode(item) is not { } next) return;
         UpNext = new UpNext(next, DateTimeOffset.Now.AddSeconds(8));
         Notify();
     }
@@ -222,10 +218,7 @@ public sealed partial class AppModel
     {
         if (_watchedDownloadId is not long id || id == keep) return;
         _watchedDownloadId = null;
-        if (Settings.BinWatchedDownloads)
-        {
-            // TODO(after core merge): Session.Downloads.BinWatched(id)
-        }
+        if (Settings.BinWatchedDownloads) Session.Downloads.BinWatched(id);
     }
 
     // MARK: Staying awake
@@ -254,11 +247,9 @@ public sealed partial class AppModel
         LocalPlayback?.Stop();
         UpNext = null;
         BinWatchedDownload(keep: item.Id);
-        // TODO(after core merge): use the current row, `Session.Downloads.Item(item.Id)`, as the Mac does.
-        var fresh = item;
-        if (LocalPlayback.Create(fresh, Session) is not { } playback)
+        if (Session.Downloads.Item(item.Id) is not { } fresh || LocalPlayback.Create(fresh, Session) is not { } playback)
         {
-            var folder = Path.GetFileName(AppPaths.DownloadsFolder(Settings).TrimEnd('\\', '/'));
+            var folder = Path.GetFileName(Session.Downloads.Folder.TrimEnd('\\', '/'));
             Toasts.Show($"{item.FileBaseName} isn't in {folder} anymore");
             Notify();
             return;

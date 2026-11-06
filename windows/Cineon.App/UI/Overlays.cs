@@ -18,13 +18,21 @@ public static class Overlays
 
     /// One of the sheets (Sheets.swift's SheetHost: AddSiteSheet, EditSiteSheet, AddTitleSheet,
     /// RelinkSheet, ImportSheet, NewChallengeSheet).
-    public static UIElement? Sheet(AppModel app, AppSheet sheet) => sheet switch
-    {
-        _ => null,
-    };
+    public static UIElement? Sheet(AppModel app, AppSheet sheet) => Sheets.For(app, sheet);
 
     /// The command bar (CommandBar.swift). It places itself; the host only dims behind it.
-    public static UIElement? CommandBar(AppModel app) => null;
+    public static UIElement? CommandBar(AppModel app) => new CommandBarView(app);
+
+    /// Asks before downloading a whole series (Sheets.swift's SeriesDownloadSheet), between the sheet
+    /// and the command bar, while `app.Session.Seasons.PendingProposal` is set.
+    public static UIElement SeriesDownload(AppModel app, Cineon.Core.Downloads.SeasonGrabber.Proposal proposal)
+    {
+        var sheet = new SeriesDownloadSheet(app, proposal);
+        // Only the panel takes clicks; around it, they reach the dimmed backdrop, which declines.
+        sheet.HorizontalAlignment = HorizontalAlignment.Center;
+        sheet.VerticalAlignment = VerticalAlignment.Center;
+        return sheet;
+    }
 
     /// "Who's watching?" (ProfilePicker.swift, in UI/Pages/ProfilePickerView.cs).
     public static UIElement ProfilePicker(AppModel app) => new ProfilePickerView(app);
@@ -32,19 +40,16 @@ public static class Overlays
     /// The launch animation (Splash.swift's SplashView). It sets `app.SplashVisible = false` when it's
     /// done; with none registered the splash is skipped.
     public static UIElement? Splash(AppModel app) => null;
-
-    // TODO(after core merge): the series download proposal (SeriesDownloadSheet), between the sheet and
-    // the command bar, shown while `app.Session.Seasons.Proposal` is set and dismissed with
-    // `app.Session.Seasons.Decline()`.
 }
 
 /// Hosts the overlays over the whole window, in the Mac's order (RootView's Overlays): title card,
-/// sheet, command bar, toasts, profile picker, reel change, splash.
+/// sheet, series download proposal, command bar, toasts, profile picker, reel change, splash.
 public sealed class OverlayHost : Grid
 {
     private readonly AppModel _app;
     private readonly Layer _detail = new(new PopupThemeTransition());
     private readonly Layer _sheet = new(new PopupThemeTransition());
+    private readonly Layer _proposal = new(new PopupThemeTransition());
     private readonly Layer _commandBar = new(new PopupThemeTransition());
     private readonly Layer _picker = new(new ContentThemeTransition());
     private readonly Layer _reel = new(null);
@@ -55,6 +60,7 @@ public sealed class OverlayHost : Grid
         _app = app;
         Children.Add(_detail.Root);
         Children.Add(_sheet.Root);
+        Children.Add(_proposal.Root);
         Children.Add(_commandBar.Root);
         Children.Add(new ToastHost(app));
         Children.Add(_picker.Root);
@@ -75,6 +81,17 @@ public sealed class OverlayHost : Grid
         _sheet.Show(sheet, () => Dimmed(0.5, () => app.Sheet = null,
             Overlays.Sheet(app, sheet!) ?? Placeholder(sheet!.Id, () => app.Sheet = null)));
 
+        // The proposal lives on the session's SeasonGrabber, which says when it changes.
+        var seasons = app.Session.Seasons;
+        if (!ReferenceEquals(seasons, _seasons))
+        {
+            if (_seasons is not null) _seasons.Changed -= SeasonsChanged;
+            _seasons = seasons;
+            seasons.Changed += SeasonsChanged;
+        }
+        var proposal = seasons.PendingProposal;
+        _proposal.Show(proposal, () => Dimmed(0.5, () => app.Session.Seasons.Decline(), Overlays.SeriesDownload(app, proposal!)));
+
         _commandBar.Show(app.IsCommandBarVisible ? true : null, () => Dimmed(0.3, app.CloseCommandBar,
             Overlays.CommandBar(app) ?? Placeholder("Search films and sites", app.CloseCommandBar)));
 
@@ -92,6 +109,10 @@ public sealed class OverlayHost : Grid
             else DispatcherQueue?.TryEnqueue(() => app.SplashVisible = false);
         }
     }
+
+    private Cineon.Core.Downloads.SeasonGrabber? _seasons;
+
+    private void SeasonsChanged(object? sender, EventArgs e) => Update();
 
     /// The Mac's DimmedBackdrop under an overlay: a click outside it closes it.
     private static Grid Dimmed(double strength, Action dismiss, UIElement content)

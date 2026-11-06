@@ -158,12 +158,10 @@ public sealed class EpisodeAlerts : Observable
     private static (int, int) Order(EpisodeRef episode) => (episode.Season, episode.Episode);
 
     /// The series' episode list, fetched fresh.
-    private Task<IReadOnlyList<AiredEpisode>> EpisodesAsync(Title title)
+    private async Task<IReadOnlyList<AiredEpisode>> EpisodesAsync(Title title)
     {
-        // TODO(after core merge): `(await _session.Metadata.EpisodesAsync(title, fresh: true))
-        //     .Select(e => new AiredEpisode(e.Season, e.Episode, e.Released))`.
-        _ = title;
-        return Task.FromResult<IReadOnlyList<AiredEpisode>>([]);
+        var episodes = await _session.Metadata.EpisodesAsync(title, fresh: true);
+        return [.. episodes.Select(e => new AiredEpisode(e.Season, e.Episode, e.Released))];
     }
 
     /// Clears the news for a series, once you've seen it.

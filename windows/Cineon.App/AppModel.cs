@@ -322,8 +322,8 @@ public sealed partial class AppModel : Observable
         // Stopped watching a download: carry on with the copy on this PC.
         if (url.IsFile)
         {
-            // TODO(after core merge): `if (Session.Downloads.Item(forFile: url) is { } download) { PlayDownload(download); return; }`
-            Toasts.Show("That file isn't on this PC anymore");
+            if (Session.Downloads.ItemForFile(url.LocalPath) is { } download) PlayDownload(download);
+            else Toasts.Show("That file isn't on this PC anymore");
             return;
         }
         Browser.Open(url, resumeAt: position, keepWatching: true);
@@ -410,13 +410,14 @@ public sealed partial class AppModel : Observable
         Toasts.Show($"Added {title.Name} to backlog", "Undo", () => Library.Delete(title.Id));
     }
 
-    // TODO(after core merge): public void AddToBacklog(MetadataHit hit)
-    // {
-    //     if (Library.AddTitle(hit.Name, hit.Year, hit.Kind, TitleStatus.Backlog, imdbId: hit.Id, posterUrl: hit.PosterUrl) is not { } title) return;
-    //     // Fills in the description and backdrop.
-    //     Session.Metadata.Apply(hit, title.Id);
-    //     Toasts.Show($"Added {hit.Name} to backlog");
-    // }
+    /// Adds a title the catalogue found (the add-title sheet, the command bar).
+    public void AddToBacklog(Cineon.Core.Metadata.MetadataHit hit)
+    {
+        if (Library.AddTitle(hit.Name, hit.Year, hit.Kind, TitleStatus.Backlog, imdbId: hit.Id, posterUrl: hit.PosterUrl) is not { } title) return;
+        // Fills in the description and backdrop.
+        _ = Session.Metadata.ApplyAsync(hit, title.Id);
+        Toasts.Show($"Added {hit.Name} to backlog");
+    }
 
     /// Saves the frame on screen from whatever is playing.
     public void SaveMoment()

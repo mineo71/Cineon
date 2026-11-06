@@ -277,6 +277,23 @@ public static class Ui
         return element;
     }
 
+    /// Takes an element that outlives a render (a text box being typed in, a list that keeps its
+    /// scroll position, a playing video) out of the tree it was in, so the next render can place it.
+    /// An element has one parent at a time.
+    public static T Detached<T>(this T element) where T : FrameworkElement
+    {
+        switch (element.Parent)
+        {
+            case Panel panel: panel.Children.Remove(element); break;
+            case Border border when border.Child == element: border.Child = null; break;
+            case ContentControl control when control.Content == element: control.Content = null; break;
+            case UserControl user when user.Content == element: user.Content = null; break;
+            case Viewbox box when box.Child == element: box.Child = null; break;
+            case Microsoft.UI.Xaml.Controls.Primitives.Popup popup when popup.Child == element: popup.Child = null; break;
+        }
+        return element;
+    }
+
     public static Thickness Add(Thickness a, Thickness b) => new(a.Left + b.Left, a.Top + b.Top, a.Right + b.Right, a.Bottom + b.Bottom);
 
     public static SolidColorBrush B(Color color) => new(color);
