@@ -19,6 +19,7 @@ Or with Homebrew, which skips step 2:
 
 ```
 brew tap mineo71/cineon https://github.com/mineo71/Cineon
+brew trust mineo71/cineon
 brew install --cask cineon
 ```
 

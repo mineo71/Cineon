@@ -2,8 +2,7 @@ cask "cineon" do
   version "1.0.0"
   sha256 "2c52c8bfcbbf34787a49c92ec3462c587e52e6eef935134b436733b8a3a95fb5"
 
-  url "https://github.com/mineo71/Cineon/releases/download/v#{version}/Cineon-#{version}.dmg",
-      verified: "github.com/mineo71/Cineon/"
+  url "https://github.com/mineo71/Cineon/releases/download/v#{version}/Cineon-#{version}.dmg"
   name "Cineon"
   desc "Browser for watching films and series that remembers where you stopped"
   homepage "https://github.com/mineo71/Cineon"
