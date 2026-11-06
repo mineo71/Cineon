@@ -7,6 +7,8 @@ public static class Pages
 {
     public static UIElement For(AppModel app) => app.Route switch
     {
+        // The site itself is in the workspace's web layer; this is what floats over it.
+        Route.Web => new WebOverlays(app),
         _ => Placeholder(app.Route.ToString()),
     };
 

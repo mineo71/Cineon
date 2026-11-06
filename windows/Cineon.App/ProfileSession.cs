@@ -2,6 +2,8 @@ using Cineon.App.Browser;
 using Cineon.App.Services;
 using Cineon.App.UI;
 using Cineon.Core.Data;
+using Cineon.Core.Downloads;
+using Cineon.Core.Metadata;
 using Cineon.Core.Profile;
 using Cineon.Core.Shields;
 
@@ -35,11 +37,17 @@ public sealed class ProfileSession : Observable
     public TogetherModel Together { get; }
     public EpisodeAlerts Alerts { get; }
 
-    // TODO(port-browser): `WatchTracker Tracker` (Mac: tracker = WatchTracker(session: self)). The Mac's
-    // ScriptRouter has no counterpart: each tab's ScriptBridge delivers its pages' messages to that tab.
-    // TODO(after core merge): `MetadataService Metadata` (MetadataService(library) { settings.fetchMetadata }),
-    // `DownloadCenter Downloads`, `SeasonGrabber Seasons` and `CloudLibrary Cloud`, created here in the
-    // Mac's order (metadata before the browser; downloads, together, seasons, alerts, cloud after it).
+    /// Turns playback reports into the timeline. The Mac's ScriptRouter has no counterpart: each
+    /// tab's ScriptBridge delivers its pages' messages to that tab.
+    public WatchTracker Tracker { get; }
+    /// Posters, descriptions and episode lists from the catalogue.
+    public MetadataService Metadata { get; }
+    public DownloadCenter Downloads { get; }
+    /// Downloads a season, or a whole series, through a hidden tab.
+    public SeasonGrabber Seasons { get; }
+    /// Cookies and the browser's name for downloads, from this profile's WebView2.
+    public RequestContext RequestContext { get; }
+    // TODO(after core merge): `CloudLibrary Cloud`, created after the alerts as on the Mac.
 
     /// The ad and tracker rules this person has switched on, as last applied.
     public ShieldEngine Rules { get; private set; } = ShieldEngine.Empty;
@@ -55,13 +63,19 @@ public sealed class ProfileSession : Observable
         Library = new LibraryStore(Db);
         Shields = new ShieldState(new DatabaseShieldStore(Db));
 
+        Metadata = new MetadataService(Library, () => _settings.FetchMetadata);
         Web = new WebEnvironment(profile.Id);
         Web.InstallScripts(_settings.OverlaySweeper);
+        Tracker = new WatchTracker(this);
         Autopilot = new EpisodeAutopilot(this);
         Rescue = new RescueEngine(this);
         Frames = new FrameCollector(this);
         Browser = new BrowserModel(this);
+        RequestContext = new RequestContext(this);
+        var downloadHost = new DownloadHost(this);
+        Downloads = new DownloadCenter(Db, Library, () => _settings, RequestContext, downloadHost);
         Together = new TogetherModel(this);
+        Seasons = new SeasonGrabber(Downloads, downloadHost, new EpisodeResolver(this), AppPaths.Profile(profile.Id));
         Alerts = new EpisodeAlerts(this);
 
         Library.SeedDefaultSitesIfNeeded();
@@ -79,10 +93,7 @@ public sealed class ProfileSession : Observable
             Db.SaveSettings(value);
             if (value.OverlaySweeper != old.OverlaySweeper) Web.InstallScripts(value.OverlaySweeper);
             if (value.NetworkBlocking != old.NetworkBlocking || !value.EnabledLists.SetEquals(old.EnabledLists)) ApplyRules();
-            if (value.ShowDownloadButton != old.ShowDownloadButton)
-            {
-                // TODO(after core merge): Downloads.RefreshPills(force: true)
-            }
+            if (value.ShowDownloadButton != old.ShowDownloadButton) Downloads.RefreshPills(force: true);
             if (value.VoiceBoost != old.VoiceBoost)
             {
                 foreach (var tab in Browser.Tabs) tab.ApplyVoiceBoost();
@@ -142,13 +153,14 @@ public sealed class ProfileSession : Observable
         if (_isClosed) return;
         _isClosed = true;
         // Kept, to carry on with next time.
-        // TODO(after core merge): Seasons.Suspend()
+        Seasons.Suspend();
         Alerts.Stop();
         // TODO(after core merge): Cloud.Stop()
         Together.Stop();
         // TODO(after core merge): Downloads.SuspendAll()
         Shields.Flush();
         Browser.Shutdown();
+        RequestContext.Close();
         Web.Teardown();
         Db.Dispose();
     }

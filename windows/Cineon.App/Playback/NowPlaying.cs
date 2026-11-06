@@ -130,8 +130,7 @@ public sealed class NowPlayingCenter
                 detail = local.Playback.Badge is { } badge ? $"{badge} · On this PC" : "On this PC";
                 break;
             case ActivePlayer.Web web:
-                // TODO(after core merge): `title?.Name ?? web.Tab.Parsed?.Name ?? web.Tab.DisplayTitle`.
-                name = title?.Name ?? web.Tab.DisplayTitle;
+                name = title?.Name ?? web.Tab.Parsed?.Name ?? web.Tab.DisplayTitle;
                 var host = web.Tab.Url is { Host.Length: > 0 } url ? DomainName.DisplayName(url.Host) : null;
                 detail = string.Join(" · ", new[] { player.Ref?.ShortLabel, host }.OfType<string>());
                 break;

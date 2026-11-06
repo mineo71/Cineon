@@ -58,8 +58,7 @@ public abstract record ActivePlayer
                 case Local l:
                     return l.Playback.DownloadItem.Ref.IsEpisode ? l.Playback.DownloadItem.Ref : null;
                 case Web w:
-                    // TODO(after core merge): `w.Tab.Track?.Ref ?? w.Tab.Parsed?.Ref`, as the Mac does.
-                    var episode = w.Tab.Track?.Ref;
+                    var episode = w.Tab.Track?.Ref ?? w.Tab.Parsed?.Ref;
                     return episode?.IsEpisode == true ? episode : null;
                 default:
                     return null;

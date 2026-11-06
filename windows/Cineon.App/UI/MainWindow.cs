@@ -18,6 +18,7 @@ public sealed class MainWindow : Window
     private readonly Grid _root = new();
     private readonly TopBar _topBar;
     private readonly PageHost _pages;
+    private readonly Workspace _workspace;
     private readonly OverlayHost _overlays;
     /// Alt went down with nothing else pressed since, so letting go of it opens the menu.
     private bool _altAlone;
@@ -41,14 +42,16 @@ public sealed class MainWindow : Window
 
         _topBar = new TopBar(app, this);
         _pages = new PageHost(app);
+        // The film's light, the framed screen with the sites, and the pages (Workspace.cs).
+        _workspace = new Workspace(app, _pages);
         _overlays = new OverlayHost(app);
 
         _root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(TopBar.Height) });
         _root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        _pages.Cell(row: 0, rowSpan: 2);
+        _workspace.Cell(row: 0, rowSpan: 2);
         _topBar.Cell(row: 0);
         _overlays.Cell(row: 0, rowSpan: 2);
-        _root.Children.Add(_pages);
+        _root.Children.Add(_workspace);
         _root.Children.Add(_topBar);
         _root.Children.Add(_overlays);
         Content = _root;
@@ -61,16 +64,18 @@ public sealed class MainWindow : Window
         _topBar.LayoutUpdated += (_, _) => UpdateTitleBarRegions();
         _root.SizeChanged += (_, _) => UpdateTitleBarRegions();
 
-        // The menus' shortcuts, for keys the focused view didn't use.
+        // The menus' shortcuts, for keys the focused view didn't use. A web page's keys come from
+        // the page itself (PageExtras.Keys), so any WebView2 might also send here are left alone.
         _root.KeyDown += (_, e) =>
         {
+            if (IsFromWebView(e.OriginalSource)) return;
             var (control, shift, alt) = Shortcuts.Modifiers();
             if (Shortcuts.Handle(app, e.Key, control, shift, alt)) e.Handled = true;
         };
         // Ctrl+Tab before focus navigation takes the Tab key.
         _root.PreviewKeyDown += (_, e) =>
         {
-            if (e.Key != VirtualKey.Tab) return;
+            if (e.Key != VirtualKey.Tab || IsFromWebView(e.OriginalSource)) return;
             var (control, shift, alt) = Shortcuts.Modifiers();
             if (control && Shortcuts.Handle(app, e.Key, control, shift, alt)) e.Handled = true;
         };
@@ -97,9 +102,19 @@ public sealed class MainWindow : Window
 
     private void Layout()
     {
-        _pages.SetTopInset(_app.Route == Route.Home || _app.IsCinema ? 0 : TopBar.Height);
-        // Cinema mode leaves only the film.
-        _topBar.Visibility = _app.IsCinema ? Visibility.Collapsed : Visibility.Visible;
+        // Cinema mode leaves only the film; so does a video gone fullscreen. On a site with the
+        // bars tucked away they come back while the pointer is at the top. The page's own top
+        // follows in the Workspace.
+        _topBar.Visibility = _app.ShowsBars ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private static bool IsFromWebView(object? source)
+    {
+        for (var node = source as DependencyObject; node is not null; node = VisualTreeHelper.GetParent(node))
+        {
+            if (node is WebView2) return true;
+        }
+        return false;
     }
 
     /// The window's handle, for the Windows APIs that want one.

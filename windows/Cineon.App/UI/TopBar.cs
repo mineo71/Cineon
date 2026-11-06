@@ -89,7 +89,8 @@ public sealed class TopBar : Component
 
         var leading = Ui.HStack(0, logo).Padding(16, 0, 0, 0);
         var middle = new SectionTabs(_app, Style(_width), OnHero);
-        var trailing = Ui.HStack(10, toolsCapsule, avatar).Padding(0, 0, Math.Max(16, _window.CaptionButtonsWidth + 12), 0);
+        var trailing = Ui.HStack(10, new NowPlayingPill(_app, compact: _width < 1360, onHero: OnHero), toolsCapsule, avatar)
+            .Padding(0, 0, Math.Max(16, _window.CaptionButtonsWidth + 12), 0);
 
         var bar = new CentredBar(14) { Children = { leading, middle, trailing } };
         bar.Height = Height;

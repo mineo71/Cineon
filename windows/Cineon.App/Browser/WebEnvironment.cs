@@ -1,17 +1,24 @@
+using Cineon.App.UI;
 using Cineon.Core.Data;
 using Cineon.Core.Shields;
+using Microsoft.Web.WebView2.Core;
+using Windows.System;
 
 namespace Cineon.App.Browser;
 
 /// What one profile's tabs share: the WebView2 environment with its own user data folder (cookies
 /// and logins stay apart between family members), the page scripts and the ad rules. The Mac's
-/// `WebKitEnvironment`. The browser port owns this file and builds the real one.
+/// `WebKitEnvironment`. Lives on the UI thread.
 public sealed class WebEnvironment
 {
-    // TODO(port-browser): init(profileID: UUID, router: ScriptRouter). Create the CoreWebView2Environment
-    // here with UserDataFolder (below) and AdditionalBrowserArguments
-    // "--disable-features=HardwareMediaKeyHandling,MediaSessionService" so media keys reach
-    // NowPlayingCenter instead of Chromium (see windows/notes/app.md).
+    /// Media keys go to NowPlayingCenter, not to Chromium's own media session. Chromium's own
+    /// occlusion tracking is off too, so a film behind another window, or the season grabber's
+    /// helper parked out of sight, keeps playing the way a WKWebView does.
+    public const string BrowserArguments =
+        "--disable-features=HardwareMediaKeyHandling,MediaSessionService,CalculateNativeWinOcclusion";
+
+    private Task<CoreWebView2Environment>? _environment;
+
     public WebEnvironment(Guid profileId)
     {
         ProfileId = profileId;
@@ -29,23 +36,91 @@ public sealed class WebEnvironment
 
     public bool OverlaySweeper { get; private set; } = true;
 
-    // TODO(port-browser): func installScripts(overlaySweeper enabled: Bool). Reinstall in open tabs
-    // through ScriptBridge.InstallAsync(overlaySweeper).
+    /// Raised when the page scripts change, so open tabs install the new set for their next pages.
+    public event Action? ScriptsChanged;
+
+    /// The profile closed: no new web views from here.
+    public bool IsTornDown { get; private set; }
+
+    /// The environment, created once on first use. Call on the UI thread.
+    public Task<CoreWebView2Environment> EnvironmentAsync()
+    {
+        if (IsTornDown) return Task.FromException<CoreWebView2Environment>(new ObjectDisposedException(nameof(WebEnvironment)));
+        return _environment ??= CreateAsync();
+    }
+
+    private async Task<CoreWebView2Environment> CreateAsync()
+    {
+        try
+        {
+            Directory.CreateDirectory(UserDataFolder);
+            var options = new CoreWebView2EnvironmentOptions { AdditionalBrowserArguments = BrowserArguments };
+            return await CoreWebView2Environment.CreateWithOptionsAsync("", UserDataFolder, options);
+        }
+        catch (Exception)
+        {
+            // Let the next tab try again, for instance after the WebView2 runtime is installed.
+            _environment = null;
+            throw;
+        }
+    }
+
+    /// Starts the browser process early, so the first tab paints without waiting for it. The Mac
+    /// keeps a web view warm for the same reason.
+    public void WarmUp() => Safe.Fire("web warm-up", async () => { if (!IsTornDown) await EnvironmentAsync(); });
+
+    /// Installs the page scripts. The sweeper is optional, so it can be switched off in Settings.
     public void InstallScripts(bool overlaySweeper)
     {
         OverlaySweeper = overlaySweeper;
+        ScriptsChanged?.Invoke();
     }
 
-    // TODO(port-browser): func applyRules(_ lists: [WKContentRuleList]).
     public void ApplyRules(ShieldEngine rules)
     {
         Rules = rules;
         RulesChanged?.Invoke();
     }
 
-    // TODO(port-browser): func teardown()
     public void Teardown()
     {
+        IsTornDown = true;
         RulesChanged = null;
+        ScriptsChanged = null;
     }
+
+    // MARK: Setting up a web view
+
+    /// The settings every web view gets, the Mac's `makeConfiguration`. Sites never get to
+    /// interrupt the film with a dialog; the pop-up shield decides about new windows; streaming
+    /// sites trip SmartScreen constantly, as they do Safari's fraud warning.
+    internal static void Configure(CoreWebView2 core)
+    {
+        var settings = core.Settings;
+        settings.AreDefaultScriptDialogsEnabled = false;
+        settings.IsStatusBarEnabled = false;
+        settings.AreBrowserAcceleratorKeysEnabled = false;
+        settings.AreDevToolsEnabled = true;
+        settings.IsZoomControlEnabled = true;
+        settings.IsPinchZoomEnabled = true;
+        settings.IsSwipeNavigationEnabled = true;
+        settings.IsReputationCheckingRequired = false;
+        settings.AreHostObjectsAllowed = false;
+        settings.IsWebMessageEnabled = true;
+        settings.IsScriptEnabled = true;
+    }
+
+    /// The Windows-only scripts that go after the shared ones (see `PageExtras`).
+    internal static IEnumerable<string> ExtraScripts() => [KeysScript.Value, PageExtras.Links, PageExtras.Css];
+
+    private static readonly Lazy<string> KeysScript = new(() =>
+    {
+        var shortcuts = new List<Shortcut> { Shortcut.Ctrl(VirtualKey.K) };
+        if (AppModel.Shared is { } app)
+        {
+            try { shortcuts.AddRange(AppCommands.All(app).Select(c => c.Shortcut).OfType<Shortcut>()); }
+            catch (Exception error) { CrashLog.Write("shortcut list", error); }
+        }
+        return PageExtras.Keys(shortcuts);
+    });
 }
