@@ -14,3 +14,4 @@ Cineon.xcodeproj/
 windows/**/bin/
 windows/**/obj/
 windows/**/TestResults/
+.claude/
