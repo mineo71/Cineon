@@ -93,14 +93,14 @@ Status: `todo`, `wip`, `done` (ported and tested), `n/a` (no Windows equivalent)
 ### App
 | Mac | Windows | Status |
 | --- | --- | --- |
-| App/CineonApp.swift | App/Program.cs, App.cs, menus become keyboard accelerators | todo |
-| App/AppModel.swift, ProfileSession.swift | App/AppModel.cs, ProfileSession.cs | todo |
+| App/CineonApp.swift | App/Program.cs, App.cs, menus become keyboard accelerators | done |
+| App/AppModel.swift, ProfileSession.swift | App/AppModel.cs, ProfileSession.cs | done |
 | UI/Theme.swift | App/UI/Theme.cs (Palette, Typeface, button styles) | todo |
 | UI/RootView.swift, TopBar.swift, Sidebar.swift | App/UI/MainWindow.cs, TopBar.cs, BrowserBar.cs | todo |
 | Browser/* | App/Browser/* (WebView2 tabs, script bridge, tracking, rescue, autopilot, frames) | todo |
-| App/Playback.swift, StayAwake.swift | App/Playback/* (SMTC, sleep timer, SetThreadExecutionState) | todo |
+| App/Playback.swift, StayAwake.swift | App/Playback/* (SMTC, sleep timer, SetThreadExecutionState) | done |
 | Downloads/LocalPlayback.swift | App/Playback/LocalPlayer.cs | todo |
-| App/EpisodeAlerts.swift | App/Services/EpisodeAlerts.cs (app notifications) | todo |
+| App/EpisodeAlerts.swift | App/Services/EpisodeAlerts.cs (app notifications) | done |
 | App/TogetherModel.swift | App/TogetherModel.cs | todo |
 | UI/HomeView, LibraryView, TitleDetailView, WatchTimelineView | App/UI/Pages/* | todo |
 | UI/DownloadsView, PlayerControls, Sheets, CommandBar | App/UI/* | todo |
@@ -108,7 +108,7 @@ Status: `todo`, `wip`, `done` (ported and tested), `n/a` (no Windows equivalent)
 | UI/SettingsView, ImportSheet, RescueView, Splash | App/UI/* | todo |
 | App/DebugCommands.swift | App/DebugCommands.cs (local HTTP port in Debug builds on scratch data) | todo |
 | App/Updater.swift | App/Updater.cs (Velopack) | done |
-| App/Intents.swift (Siri, Shortcuts) | Jump List tasks | todo |
+| App/Intents.swift (Siri, Shortcuts) | Jump List tasks | done |
 | AirPlay | n/a | n/a |
 
 ## Notes from the ports
@@ -118,6 +118,10 @@ piece. Shared text keys (`LibraryText.Normalize`, `LibraryText.CanonicalGenre`) 
 other ports call those instead of keeping copies.
 
 ## Releases
+
+Velopack installs the app into `%LOCALAPPDATA%\Cineon.App` (pack id `Cineon.App`). Data lives in
+`%LOCALAPPDATA%\Cineon`, a different folder, because Velopack's uninstaller deletes its own folder.
+Never change the pack id after the first Windows release: installed copies would stop updating.
 
 One version number for both platforms. `make release` publishes the Mac build and pushes the tag.
 The Windows workflow runs on the tag, builds win-x64 and win-arm64, packs them with Velopack and adds

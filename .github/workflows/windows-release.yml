@@ -73,7 +73,7 @@ jobs:
             dotnet publish Cineon.App -c Release -r $rid -o "../publish/$rid" -p:Version=$env:VERSION
             # Earlier releases, so Velopack can make small delta updates.
             vpk download github --repoUrl https://github.com/${{ github.repository }} --channel $rid --outputDir ../releases 2>$null
-            vpk pack --packId Cineon --packVersion $env:VERSION --packDir "../publish/$rid" --mainExe Cineon.exe `
+            vpk pack --packId Cineon.App --packVersion $env:VERSION --packDir "../publish/$rid" --mainExe Cineon.exe `
               --packTitle Cineon --packAuthors "Oleh Rylskyj" --icon Cineon.App/Assets/Cineon.ico `
               --channel $rid --runtime $rid --releaseNotes ../notes.md --outputDir ../releases
           }
