@@ -31,7 +31,7 @@ sealed class TitleRecognizer : ITitleRecognizer {
     public EpisodeRef? EpisodeRefIn(string text) => TitleParser.EpisodeRef(text);  // Swift episodeRef(in:)
 }
 ```
-The tests use `TestTitleParser`, a port of the address-and-title path of `TitleParser.swift`. Once the
+The tests now use the real parser through `Cineon.Core.Import.ParserRecognizer` (app code should too). Formerly the
 Parsing port lands, point the tests at the adapter above and delete it.
 
 ## Downloads API (`Cineon.Core.Downloads`)

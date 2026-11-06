@@ -85,10 +85,10 @@ Status: `todo`, `wip`, `done` (ported and tested), `n/a` (no Windows equivalent)
 | Profile/PixelPet.swift | Core/Profile/PixelPet.cs | done |
 | Core/TogetherClient.swift | Core/Together/TogetherClient.cs | done |
 | App/CloudLibrary.swift | Core/Together/CloudLibrary.cs | done |
-| Core/BrowserImport.swift | Core/Import/BrowserImport.cs (Chrome, Edge, Brave, Arc, Opera, Vivaldi on Windows) | todo |
-| Downloads/DownloadCenter.swift | Core/Downloads/DownloadCenter.cs | todo |
-| Downloads/SeasonGrabber.swift | Core/Downloads/SeasonGrabber.cs (job model + planning) | todo |
-| Downloads/Subtitles.swift | Core/Downloads/Subtitles.cs | todo |
+| Core/BrowserImport.swift | Core/Import/BrowserImport.cs (Chrome, Edge, Brave, Arc, Opera, Vivaldi on Windows) | done |
+| Downloads/DownloadCenter.swift | Core/Downloads/DownloadCenter.cs | done |
+| Downloads/SeasonGrabber.swift | Core/Downloads/SeasonGrabber.cs (job model + planning) | done |
+| Downloads/Subtitles.swift | Core/Downloads/Subtitles.cs | done |
 
 ### App
 | Mac | Windows | Status |

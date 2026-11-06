@@ -13,7 +13,7 @@ public sealed class BrowserImportTests : IDisposable
 
     public void Dispose() => _root.Dispose();
 
-    private static ITitleRecognizer Parser => TestTitleParser.Shared;
+    private static ITitleRecognizer Parser => ParserRecognizer.Shared;
 
     // MARK: Fake browsers
 
