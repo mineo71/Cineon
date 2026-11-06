@@ -3,6 +3,11 @@
 Each release's section here becomes its notes on GitHub and in Cineon's update window.
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-11-06
+
+### Fixed
+- A crash when a Legend-stage pet twinkled at the very end of its animation.
+
 ## [1.0.0] - 2026-11-06
 
 First public release.
