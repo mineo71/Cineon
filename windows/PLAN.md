@@ -75,16 +75,16 @@ Status: `todo`, `wip`, `done` (ported and tested), `n/a` (no Windows equivalent)
 | Core/LibraryStore.swift | Core/Data/LibraryStore.cs | done |
 | Core/LibraryQuery.swift | Core/Data/LibraryQuery.cs | done |
 | App/ProfileStore.swift (+ AppPaths) | Core/Data/ProfileStore.cs, AppPaths.cs | done |
-| Core/TitleParser.swift | Core/Parsing/TitleParser.cs | todo |
-| Core/RescueMatcher.swift | Core/Parsing/RescueMatcher.cs | todo |
-| Core/EpisodeLinks.swift | Core/Parsing/EpisodeLinks.cs | todo |
-| Core/Metadata.swift | Core/Metadata/MetadataService.cs | todo |
-| Core/Images.swift | Core/Metadata/ImageCache.cs | todo |
+| Core/TitleParser.swift | Core/Parsing/TitleParser.cs | done |
+| Core/RescueMatcher.swift | Core/Parsing/RescueMatcher.cs | done |
+| Core/EpisodeLinks.swift | Core/Parsing/EpisodeLinks.cs | done |
+| Core/Metadata.swift | Core/Metadata/MetadataService.cs | done |
+| Core/Images.swift | Core/Metadata/ImageCache.cs | done |
 | Shields/FilterConverter.swift, FilterEngine.swift, ShieldState.swift | Core/Shields/* (request matcher + cosmetic CSS) | done |
 | Profile/ProfileStats.swift | Core/Profile/ProfileStats.cs | done |
 | Profile/PixelPet.swift | Core/Profile/PixelPet.cs | done |
-| Core/TogetherClient.swift | Core/Together/TogetherClient.cs | todo |
-| App/CloudLibrary.swift | Core/Together/CloudLibrary.cs | todo |
+| Core/TogetherClient.swift | Core/Together/TogetherClient.cs | done |
+| App/CloudLibrary.swift | Core/Together/CloudLibrary.cs | done |
 | Core/BrowserImport.swift | Core/Import/BrowserImport.cs (Chrome, Edge, Brave, Arc, Opera, Vivaldi on Windows) | todo |
 | Downloads/DownloadCenter.swift | Core/Downloads/DownloadCenter.cs | todo |
 | Downloads/SeasonGrabber.swift | Core/Downloads/SeasonGrabber.cs (job model + planning) | todo |
@@ -101,7 +101,7 @@ Status: `todo`, `wip`, `done` (ported and tested), `n/a` (no Windows equivalent)
 | App/Playback.swift, StayAwake.swift | App/Playback/* (SMTC, sleep timer, SetThreadExecutionState) | done |
 | Downloads/LocalPlayback.swift | App/Playback/LocalPlayer.cs | todo |
 | App/EpisodeAlerts.swift | App/Services/EpisodeAlerts.cs (app notifications) | done |
-| App/TogetherModel.swift | App/TogetherModel.cs | todo |
+| App/TogetherModel.swift | App/TogetherModel.cs | done |
 | UI/HomeView, LibraryView, TitleDetailView, WatchTimelineView | App/UI/Pages/* | todo |
 | UI/DownloadsView, PlayerControls, Sheets, CommandBar | App/UI/* | todo |
 | UI/TogetherView, ProfileView, ProfilePicker, RateModeView, Rating | App/UI/* | todo |
