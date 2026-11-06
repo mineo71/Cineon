@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Cineon.Core.Data;
 using Microsoft.Graphics.Canvas.Effects;
@@ -17,29 +16,21 @@ namespace Cineon.App.UI;
 // Pieces every screen shares, ported from the Mac's Theme.swift and Rating.swift: star ratings,
 // the gold badge, the progress line, the film strip and posters that fade to black and white.
 
-/// Fetches image bytes for posters, backdrops, site icons and saved frames (file paths).
-/// TODO(after core merge): route remote URLs through Cineon.Core.Metadata.ImageCache.
+/// Fetches image bytes for posters, backdrops, site icons and saved frames (file paths), through
+/// Core's ImageCache (memory, then disk, then network), like the Mac's image pipeline.
 public static class ImageBytes
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(20) };
-    private static readonly ConcurrentDictionary<string, Task<byte[]?>> Memory = new();
-
-    static ImageBytes() => Http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Cineon");
-
-    public static Task<byte[]?> GetAsync(Uri url) => Memory.GetOrAdd(url.OriginalString, _ => Load(url));
-
-    private static async Task<byte[]?> Load(Uri url)
+    public static async Task<byte[]?> GetAsync(Uri url)
     {
         try
         {
             if (url.IsFile) return await File.ReadAllBytesAsync(url.LocalPath);
-            if (url.Scheme is "http" or "https") return await Http.GetByteArrayAsync(url);
+            if (url.Scheme is "http" or "https") return await Cineon.Core.Metadata.ImageCache.Shared.DataAsync(url);
         }
         catch
         {
             // A missing image falls back to its placeholder.
         }
-        Memory.TryRemove(url.OriginalString, out _);
         return null;
     }
 
