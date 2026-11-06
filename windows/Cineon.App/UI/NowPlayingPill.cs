@@ -36,6 +36,8 @@ public sealed class NowPlayingPill : Grid
         _compact = compact;
         _onHero = onHero;
         VerticalAlignment = VerticalAlignment.Center;
+        // Out of the bar's spacing until something plays.
+        Visibility = Visibility.Collapsed;
         Loaded += (_, _) =>
         {
             Refresh();
@@ -55,8 +57,9 @@ public sealed class NowPlayingPill : Grid
         {
             if (_shownKey is null) return;
             _shownKey = null;
-            Children.Clear();
             _controls?.Hide();
+            Children.Clear();
+            Visibility = Visibility.Collapsed;
             return;
         }
         var title = player.TitleId is long id ? _app.Library.Titles.GetValueOrDefault(id) : null;
@@ -65,6 +68,7 @@ public sealed class NowPlayingPill : Grid
         {
             _shownKey = key;
             Build(player, title);
+            Visibility = Visibility.Visible;
         }
         Update(player);
     }

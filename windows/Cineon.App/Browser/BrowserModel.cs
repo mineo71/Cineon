@@ -18,6 +18,7 @@ public sealed class BrowserModel : Observable
     private DispatcherQueueTimer? _hibernateTimer;
     private CancellationTokenSource? _save;
     private bool _isShutDown;
+    private AppWindowPresenter? _presenterBeforeFullscreen;
 
     public BrowserModel(ProfileSession session)
     {
@@ -280,7 +281,22 @@ public sealed class BrowserModel : Observable
         if (on && !ReferenceEquals(Selected, tab)) return;
         if (Session.App?.Window is { } window)
         {
-            Safe.Run("fullscreen", () => window.AppWindow.SetPresenter(on ? AppWindowPresenterKind.FullScreen : AppWindowPresenterKind.Overlapped));
+            Safe.Run("fullscreen", () =>
+            {
+                var appWindow = window.AppWindow;
+                if (on)
+                {
+                    if (appWindow.Presenter.Kind == AppWindowPresenterKind.FullScreen) return;
+                    // The window's own presenter keeps its minimum size and maximised state for later.
+                    _presenterBeforeFullscreen = appWindow.Presenter;
+                    appWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
+                }
+                else if (_presenterBeforeFullscreen is { } previous)
+                {
+                    _presenterBeforeFullscreen = null;
+                    appWindow.SetPresenter(previous);
+                }
+            });
         }
         Notify();
         Session.App?.BrowserLayoutChanged();
