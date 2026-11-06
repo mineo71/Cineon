@@ -70,19 +70,19 @@ Status: `todo`, `wip`, `done` (ported and tested), `n/a` (no Windows equivalent)
 ### Core
 | Mac | Windows | Status |
 | --- | --- | --- |
-| Core/Models.swift | Core/Data/Models.cs | todo |
-| Core/SQLite.swift, Core/Database.swift | Core/Data/Database.cs | todo |
-| Core/LibraryStore.swift | Core/Data/LibraryStore.cs | todo |
-| Core/LibraryQuery.swift | Core/Data/LibraryQuery.cs | todo |
-| App/ProfileStore.swift (+ AppPaths) | Core/Data/ProfileStore.cs, AppPaths.cs | todo |
+| Core/Models.swift | Core/Data/Models.cs | done |
+| Core/SQLite.swift, Core/Database.swift | Core/Data/Database.cs | done |
+| Core/LibraryStore.swift | Core/Data/LibraryStore.cs | done |
+| Core/LibraryQuery.swift | Core/Data/LibraryQuery.cs | done |
+| App/ProfileStore.swift (+ AppPaths) | Core/Data/ProfileStore.cs, AppPaths.cs | done |
 | Core/TitleParser.swift | Core/Parsing/TitleParser.cs | todo |
 | Core/RescueMatcher.swift | Core/Parsing/RescueMatcher.cs | todo |
 | Core/EpisodeLinks.swift | Core/Parsing/EpisodeLinks.cs | todo |
 | Core/Metadata.swift | Core/Metadata/MetadataService.cs | todo |
 | Core/Images.swift | Core/Metadata/ImageCache.cs | todo |
-| Shields/FilterConverter.swift, FilterEngine.swift | Core/Shields/* (request matcher + cosmetic CSS) | todo |
-| Profile/ProfileStats.swift | Core/Profile/ProfileStats.cs | todo |
-| Profile/PixelPet.swift | Core/Profile/PixelPet.cs | todo |
+| Shields/FilterConverter.swift, FilterEngine.swift, ShieldState.swift | Core/Shields/* (request matcher + cosmetic CSS) | done |
+| Profile/ProfileStats.swift | Core/Profile/ProfileStats.cs | done |
+| Profile/PixelPet.swift | Core/Profile/PixelPet.cs | done |
 | Core/TogetherClient.swift | Core/Together/TogetherClient.cs | todo |
 | App/CloudLibrary.swift | Core/Together/CloudLibrary.cs | todo |
 | Core/BrowserImport.swift | Core/Import/BrowserImport.cs (Chrome, Edge, Brave, Arc, Opera, Vivaldi on Windows) | todo |
@@ -107,9 +107,15 @@ Status: `todo`, `wip`, `done` (ported and tested), `n/a` (no Windows equivalent)
 | UI/TogetherView, ProfileView, ProfilePicker, RateModeView, Rating | App/UI/* | todo |
 | UI/SettingsView, ImportSheet, RescueView, Splash | App/UI/* | todo |
 | App/DebugCommands.swift | App/DebugCommands.cs (local HTTP port in Debug builds on scratch data) | todo |
-| App/Updater.swift | App/Updater.cs (Velopack) | todo |
+| App/Updater.swift | App/Updater.cs (Velopack) | done |
 | App/Intents.swift (Siri, Shortcuts) | Jump List tasks | todo |
 | AirPlay | n/a | n/a |
+
+## Notes from the ports
+
+`windows/notes/*.md` hold each port's API summary and what isn't 1:1. Read them before building on a
+piece. Shared text keys (`LibraryText.Normalize`, `LibraryText.CanonicalGenre`) live in Core.Data;
+other ports call those instead of keeping copies.
 
 ## Releases
 

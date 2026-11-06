@@ -33,10 +33,6 @@
     <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Waits for Cineon.Core.Data.AppPaths from the data-layer port. -->
-    <Compile Remove="Services/Updater.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Cineon.Core\Cineon.Core.csproj" />
   </ItemGroup>
   <ItemGroup>

@@ -88,7 +88,7 @@ public sealed partial class AppModel : Observable
     /// Saves what needs saving before the app closes.
     public void PrepareToQuit()
     {
-        // Services.Updater.Shared.ApplyOnQuit(); (after the data-layer merge)
+        Services.Updater.Shared.ApplyOnQuit();
     }
 }
 
