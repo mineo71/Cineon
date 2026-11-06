@@ -174,6 +174,7 @@ public sealed class LocalPlayerView : Component
             _frame.BorderThickness = new Thickness(0);
             _frame.Background = new SolidColorBrush(Microsoft.UI.Colors.Black);
             _surface.CornerRadius = new CornerRadius(0);
+            _surface.BorderThickness = new Thickness(0);
             return;
         }
         _frame.Padding = new Thickness(12, 10, 12, 12);
