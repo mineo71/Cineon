@@ -19,8 +19,21 @@ permissions:
   contents: write
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.marker.outputs.go }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - id: marker
+        run: |
+          if [ -f windows/RELEASE ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; fi
+
   release:
-    if: ${{ hashFiles('windows/RELEASE') != '' || github.event_name == 'workflow_dispatch' }}
+    needs: check
+    if: ${{ needs.check.outputs.go == 'true' }}
     runs-on: windows-2025
     timeout-minutes: 60
     defaults:
