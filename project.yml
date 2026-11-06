@@ -1,0 +1,118 @@
+name: Cineon
+options:
+  bundleIdPrefix: app.cineon
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: false
+  fileTypes:
+    icon:
+      file: true
+      buildPhase: resources
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.1
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: NO
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    DEAD_CODE_STRIPPING: YES
+  configs:
+    Debug:
+      # The Together server. Tests and development use the dev deployment.
+      CINEON_TOGETHER_URL: https://stoic-pelican-635.eu-west-1.convex.cloud
+    Release:
+      # Point this at the production deployment once it exists (`cd server && npx convex deploy`).
+      CINEON_TOGETHER_URL: https://stoic-pelican-635.eu-west-1.convex.cloud
+      SWIFT_OPTIMIZATION_LEVEL: "-O"
+      SWIFT_COMPILATION_MODE: wholemodule
+      ONLY_ACTIVE_ARCH: NO
+      ARCHS: "arm64 x86_64"
+targets:
+  Cineon:
+    type: application
+    platform: macOS
+    dependencies:
+      - package: Sparkle
+    sources:
+      - path: Cineon
+        excludes:
+          - "Resources/Filters/**"
+          - "Resources/Scripts/**"
+          - "Resources/AppIcon.icon"
+          - "Resources/AppIcon.icon/**"
+      - path: Cineon/Resources/AppIcon.icon
+        type: file
+        buildPhase: resources
+      - path: Cineon/Resources/Filters
+        type: folder
+        buildPhase: resources
+      - path: Cineon/Resources/Scripts
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.cineon.Cineon
+        PRODUCT_NAME: Cineon
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: NO
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Cineon/Info.plist
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
+        COMBINE_HIDPI_IMAGES: YES
+    info:
+      path: Cineon/Info.plist
+      properties:
+        CFBundleName: Cineon
+        CFBundleDisplayName: Cineon
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        LSApplicationCategoryType: public.app-category.entertainment
+        LSMinimumSystemVersion: "$(MACOSX_DEPLOYMENT_TARGET)"
+        NSHumanReadableCopyright: © 2026 Oleh Rylskyj
+        NSPrincipalClass: NSApplication
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        CineonTogetherURL: "$(CINEON_TOGETHER_URL)"
+        SUFeedURL: https://github.com/mineo71/Cineon/releases/latest/download/appcast.xml
+        SUPublicEDKey: 6Z6REC5xz0sbaIKVA1R51PVwr2hmlLvQ749FV+H89Rc=
+        SUEnableAutomaticChecks: true
+        CFBundleURLTypes:
+          - CFBundleURLName: app.cineon.url
+            CFBundleURLSchemes: [cineon]
+  CineonTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [CineonTests]
+    dependencies:
+      - target: Cineon
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.cineon.CineonTests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Cineon.app/Contents/MacOS/Cineon"
+schemes:
+  Cineon:
+    build:
+      targets:
+        Cineon: all
+        CineonTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [CineonTests]
+    archive:
+      config: Release

@@ -1,0 +1,13 @@
+build/
+dist/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+fixtures/*.mp4
+fixtures/hls/
+__pycache__/
+*.pyc
+design/screenshots/
+design/asset-check.png
+Cineon.xcodeproj/
