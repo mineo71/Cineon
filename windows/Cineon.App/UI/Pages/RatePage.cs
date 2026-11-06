@@ -33,6 +33,10 @@ public sealed class RatePage : Component
     private Palette? _shownPalette;
     private RateCard? _card;
     private bool _animateNext;
+    /// Bumped whenever the queue is built again, so the card shows the new count and upcoming posters.
+    private int _queueVersion;
+    /// Cards on their way out, left to finish their slide.
+    private readonly HashSet<UIElement> _leaving = [];
 
     public RatePage(AppModel app)
     {
@@ -47,6 +51,8 @@ public sealed class RatePage : Component
         _root.Children.Add(_stage);
         _root.SizeChanged += (_, _) => _root.Clip = new RectangleGeometry { Rect = new Windows.Foundation.Rect(0, 0, _root.ActualWidth, _root.ActualHeight) };
         KeyDown += OnKey;
+        // A click on the page (not on a button, which keeps its own press) brings the keys back here.
+        PointerPressed += (_, _) => FocusPage();
     }
 
     private Title? Current =>
@@ -78,6 +84,7 @@ public sealed class RatePage : Component
             .Select(t => t.Id)];
         _index = 0;
         _rated = 0;
+        _queueVersion++;
     }
 
     private void SetRating(int? halves, bool andMove)
@@ -176,7 +183,7 @@ public sealed class RatePage : Component
         _shade.Visibility = current is null ? Visibility.Collapsed : Visibility.Visible;
         _shade.Background = Palette.Vertical(Palette.WithOpacity(p.Canvas, 0.2), Palette.WithOpacity(p.Canvas, 0.92));
 
-        var key = current is null ? $"done:{_queue.Count}" : $"{_index}:{current.Id}";
+        var key = current is null ? $"done:{_queueVersion}" : $"{_queueVersion}:{_index}:{current.Id}";
         var animate = _animateNext;
         _animateNext = false;
         if (key != _shownKey || !ReferenceEquals(_shownPalette, p))
@@ -213,44 +220,80 @@ public sealed class RatePage : Component
     /// both fading, on the Mac's spring (response 0.42, damping 0.86).
     private void Swap(FrameworkElement next, bool animated)
     {
-        var old = _stage.Children.ToList();
+        // Cards already leaving keep going; only the one on screen (possibly still arriving) leaves now.
+        var old = _stage.Children.Where(element => !_leaving.Contains(element)).ToList();
         _stage.Children.Add(next);
         if (!animated || !Motion.Enabled || old.Count == 0)
         {
-            foreach (var element in old) _stage.Children.Remove(element);
+            _stage.Children.Clear();
+            _leaving.Clear();
+            _stage.Children.Add(next);
             return;
         }
         var width = (float)Math.Max(1, _stage.ActualWidth);
         var compositor = ElementCompositionPreview.GetElementVisual(_stage).Compositor;
-        Slide(compositor, next, from: width, to: 0, fromOpacity: 0, toOpacity: 1);
+        SlideIn(compositor, next, width);
         var batch = compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
-        foreach (var element in old) Slide(compositor, element, from: 0, to: -width, fromOpacity: 1, toOpacity: 0);
+        foreach (var element in old)
+        {
+            _leaving.Add(element);
+            SlideOut(compositor, element, -width);
+        }
         batch.End();
         batch.Completed += (_, _) =>
         {
-            foreach (var element in old) _stage.Children.Remove(element);
+            foreach (var element in old)
+            {
+                _leaving.Remove(element);
+                _stage.Children.Remove(element);
+            }
         };
     }
 
-    private static void Slide(Compositor compositor, UIElement element, float from, float to, float fromOpacity, float toOpacity)
+    private static SpringVector3NaturalMotionAnimation Move(Compositor compositor, Vector3 to)
     {
-        element.IsHitTestVisible = toOpacity > 0;
+        var move = compositor.CreateSpringVector3Animation();
+        move.FinalValue = to;
+        move.DampingRatio = 0.86f;
+        move.Period = Motion.Period(0.42);
+        return move;
+    }
+
+    private static SpringScalarNaturalMotionAnimation Fade(Compositor compositor, float to)
+    {
+        var fade = compositor.CreateSpringScalarAnimation();
+        fade.FinalValue = to;
+        fade.DampingRatio = 0.86f;
+        fade.Period = Motion.Period(0.42);
+        return fade;
+    }
+
+    private static void SlideIn(Compositor compositor, UIElement element, float from)
+    {
         ElementCompositionPreview.SetIsTranslationEnabled(element, true);
         var visual = ElementCompositionPreview.GetElementVisual(element);
         visual.Properties.InsertVector3("Translation", new Vector3(from, 0, 0));
-        visual.Opacity = fromOpacity;
-        var move = compositor.CreateSpringVector3Animation();
+        visual.Opacity = 0;
+        var move = Move(compositor, Vector3.Zero);
         move.InitialValue = new Vector3(from, 0, 0);
-        move.FinalValue = new Vector3(to, 0, 0);
-        move.DampingRatio = 0.86f;
-        move.Period = Motion.Period(0.42);
         visual.StartAnimation("Translation", move);
-        var fade = compositor.CreateSpringScalarAnimation();
-        fade.InitialValue = fromOpacity;
-        fade.FinalValue = toOpacity;
-        fade.DampingRatio = 0.86f;
-        fade.Period = Motion.Period(0.42);
+        var fade = Fade(compositor, 1);
+        fade.InitialValue = 0;
         visual.StartAnimation("Opacity", fade);
+    }
+
+    /// From wherever the card is now, so one still arriving turns round smoothly.
+    private static void SlideOut(Compositor compositor, UIElement element, float to)
+    {
+        element.IsHitTestVisible = false;
+        ElementCompositionPreview.SetIsTranslationEnabled(element, true);
+        var visual = ElementCompositionPreview.GetElementVisual(element);
+        if (visual.Properties.TryGetVector3("Translation", out _) != CompositionGetValueStatus.Succeeded)
+        {
+            visual.Properties.InsertVector3("Translation", Vector3.Zero);
+        }
+        visual.StartAnimation("Translation", Move(compositor, new Vector3(to, 0, 0)));
+        visual.StartAnimation("Opacity", Fade(compositor, 0));
     }
 
     /// The film's backdrop, blurred far back behind the card. A new one fades in over the last.
@@ -337,6 +380,8 @@ public sealed class RatePage : Component
 
             _stars = new StarRatingControl(title.RatingHalves, value => page.SetRating(value, andMove: value is not null), size: 30, spacing: 5)
             {
+                // The page takes the arrows and Delete; the stars' own keys would rate and move on.
+                IsTabStop = false,
                 Margin = new Thickness(0, 18, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Left,
             };

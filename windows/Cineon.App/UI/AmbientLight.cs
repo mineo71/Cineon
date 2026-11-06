@@ -44,6 +44,8 @@ public sealed class AmbientLight : Grid
         _image = new Image { Source = _bitmap, Stretch = Stretch.Fill, IsHitTestVisible = false };
         Children.Add(_image);
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAccessibilityView(this, Microsoft.UI.Xaml.Automation.Peers.AccessibilityView.Raw);
+        // Dark until the model says otherwise; the bitmap starts black, which would show over white.
+        ElementCompositionPreview.GetElementVisual(this).Opacity = 0;
         Draw();
         Loaded += (_, _) =>
         {

@@ -287,48 +287,90 @@ public static class Ui
     public static AspectRatioPanel AspectRatio(UIElement child, double heightOverWidth) => new(heightOverWidth) { Children = { child } };
 
     /// Takes an element out of its parent, so it can join another layout. An element has one parent,
-    /// and adding it to a second one throws.
-    public static void Detach(UIElement element)
+    /// and adding it to a second one throws. False when it has a parent this can't take it from
+    /// (a template's ContentPresenter, a Popup, a repeater), so the caller shouldn't add it elsewhere.
+    public static bool Detach(UIElement element)
     {
         var parent = (element as FrameworkElement)?.Parent ?? VisualTreeHelper.GetParent(element);
         switch (parent)
         {
-            case Panel panel: panel.Children.Remove(element); break;
-            case Border border when ReferenceEquals(border.Child, element): border.Child = null; break;
-            case Viewbox box when ReferenceEquals(box.Child, element): box.Child = null; break;
-            case ContentControl control when ReferenceEquals(control.Content, element): control.Content = null; break;
-            case UserControl user when ReferenceEquals(user.Content, element): user.Content = null; break;
+            case null: return true;
+            case Panel panel when panel.Children.Contains(element): panel.Children.Remove(element); return true;
+            case Border border when ReferenceEquals(border.Child, element): border.Child = null; return true;
+            case Viewbox box when ReferenceEquals(box.Child, element): box.Child = null; return true;
+            case ContentControl control when ReferenceEquals(control.Content, element): control.Content = null; return true;
+            case UserControl user when ReferenceEquals(user.Content, element): user.Content = null; return true;
+            default: return false;
         }
     }
 
     /// SwiftUI's `minimumScaleFactor`: the text gets smaller, down to `minimumScale`, rather than be
-    /// cut. It stretches across its container, so its width doesn't follow its own size.
+    /// cut. The size is worked out in one go whenever the width changes, by measuring copies of the
+    /// text, so it never shrinks on screen step by step. It stretches across its container, so its
+    /// width doesn't follow its own size.
     public static TextBlock ShrinkToFit(this TextBlock text, double minimumScale)
     {
         var full = text.FontSize;
         var floor = full * minimumScale;
-        var pending = false;
-        void Check()
-        {
-            pending = false;
-            if (!text.IsTextTrimmed || text.FontSize <= floor + 0.01) return;
-            text.FontSize = Math.Max(floor, text.FontSize * 0.94);
-            // IsTextTrimmed only reports a change, so look again once this size is laid out.
-            if (!pending && text.DispatcherQueue is { } queue)
-            {
-                pending = true;
-                queue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, Check);
-            }
-        }
+        var width = -1.0;
         text.HorizontalAlignment = HorizontalAlignment.Stretch;
-        text.IsTextTrimmedChanged += (_, _) => Check();
         text.SizeChanged += (_, e) =>
         {
-            if (Math.Abs(e.NewSize.Width - e.PreviousSize.Width) < 0.5) return;
-            if (text.FontSize < full) text.FontSize = full;
-            else Check();
+            if (Math.Abs(e.NewSize.Width - width) < 0.5) return;
+            width = e.NewSize.Width;
+            var size = FittingSize(text, width, full, floor);
+            if (Math.Abs(size - text.FontSize) > 0.01) text.FontSize = size;
         };
         return text;
+    }
+
+    private static double FittingSize(TextBlock text, double width, double full, double floor)
+    {
+        if (width <= 0 || string.IsNullOrEmpty(text.Text)) return full;
+        TextBlock Copy(string content, double size, bool wrap) => new()
+        {
+            Text = content,
+            FontFamily = text.FontFamily,
+            FontWeight = text.FontWeight,
+            FontSize = size,
+            LineHeight = text.LineHeight,
+            TextWrapping = wrap ? TextWrapping.WrapWholeWords : TextWrapping.NoWrap,
+            IsTextScaleFactorEnabled = false,
+        };
+        var words = text.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var wraps = text.TextWrapping != TextWrapping.NoWrap;
+        var infinite = new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity);
+        bool Fits(double size)
+        {
+            if (!wraps)
+            {
+                var line = Copy(text.Text, size, wrap: false);
+                line.Measure(infinite);
+                return line.DesiredSize.Width <= width + 0.5;
+            }
+            // A word wider than the line can't wrap, so it would be cut.
+            foreach (var word in words)
+            {
+                var piece = Copy(word, size, wrap: false);
+                piece.Measure(infinite);
+                if (piece.DesiredSize.Width > width + 0.5) return false;
+            }
+            if (text.MaxLines <= 0) return true;
+            var block = Copy(text.Text, size, wrap: true);
+            block.Measure(new Windows.Foundation.Size(width, double.PositiveInfinity));
+            var one = Copy("Ag", size, wrap: false);
+            one.Measure(infinite);
+            return block.DesiredSize.Height <= one.DesiredSize.Height * text.MaxLines + 0.5;
+        }
+        if (Fits(full)) return full;
+        if (!Fits(floor)) return floor;
+        double low = floor, high = full;
+        for (var i = 0; i < 8; i++)
+        {
+            var middle = (low + high) / 2;
+            if (Fits(middle)) low = middle; else high = middle;
+        }
+        return low;
     }
 }
 
@@ -407,6 +449,8 @@ public sealed class ViewThatFits : Panel
             child.Arrange(shown ? new Windows.Foundation.Rect(0, 0, finalSize.Width, finalSize.Height) : new Windows.Foundation.Rect(0, 0, 0, 0));
             child.Opacity = shown ? 1 : 0;
             child.IsHitTestVisible = shown;
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAccessibilityView(child,
+                shown ? Microsoft.UI.Xaml.Automation.Peers.AccessibilityView.Content : Microsoft.UI.Xaml.Automation.Peers.AccessibilityView.Raw);
             if (child is Control control) control.IsEnabled = shown;
         }
         return finalSize;
@@ -513,6 +557,35 @@ public static class Motion
         spring.DampingRatio = (float)damping;
         spring.Period = Period(response);
         visual.StartAnimation("Scale", spring);
+    }
+
+    /// Shows an element that appears on hover (`if isHovered { ... }.transition(.opacity)`): it takes
+    /// its place and fades in, or fades out and then gives its place back.
+    public static void Reveal(UIElement element, bool shown, double seconds = 0.12)
+    {
+        if (shown)
+        {
+            element.Visibility = Visibility.Visible;
+            Fade(element, 1, seconds);
+            return;
+        }
+        Fade(element, 0, seconds);
+        if (seconds <= 0 || element.DispatcherQueue is not { } queue)
+        {
+            element.Visibility = Visibility.Collapsed;
+            return;
+        }
+        var timer = queue.CreateTimer();
+        timer.Interval = TimeSpan.FromSeconds(seconds);
+        timer.IsRepeating = false;
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            // Shown again in the meantime.
+            if (element.IsHitTestVisible) return;
+            element.Visibility = Visibility.Collapsed;
+        };
+        timer.Start();
     }
 
     /// Fades an element's own opacity, like a `.transition(.opacity)` under `.easeOut(duration:)`. A

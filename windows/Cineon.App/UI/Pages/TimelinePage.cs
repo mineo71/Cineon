@@ -33,6 +33,7 @@ public sealed class TimelinePage : Component
     private readonly ItemsRepeater _repeater;
     private readonly Border _empty = new();
     private List<TimelineRow> _rows = [];
+    private Palette? _rowsPalette;
     private readonly Dictionary<UIElement, int> _realized = [];
 
     public TimelinePage(AppModel app)
@@ -114,13 +115,16 @@ public sealed class TimelinePage : Component
     /// hover and their pictures. Anything else starts the list over.
     private void SetRows(List<TimelineRow> next)
     {
+        // Day headings, notes and the roll's end aren't components, so a new theme rebuilds them.
+        var repaint = !ReferenceEquals(_rowsPalette, Theme.P);
+        _rowsPalette = Theme.P;
         if (next.Count == _rows.Count && next.Select(r => r.Key).SequenceEqual(_rows.Select(r => r.Key)))
         {
             var old = _rows;
             _rows = next;
             foreach (var (element, index) in _realized.ToList())
             {
-                if (index < next.Count && next[index] != old[index]) Prepare(element, index);
+                if (index < next.Count && (repaint || next[index] != old[index])) Prepare(element, index);
             }
             return;
         }
@@ -327,11 +331,7 @@ internal sealed class TimelineSessionRow : PressableComponent
     {
         _still?.SetSaturation(IsMono ? 0 : 1, 0.3);
         foreach (var reel in _reels) reel.SetMono(IsMono);
-        if (_actions is not null)
-        {
-            _actions.Visibility = hovered ? Visibility.Visible : Visibility.Collapsed;
-            Motion.Fade(_actions, hovered ? 1 : 0);
-        }
+        if (_actions is not null) Motion.Reveal(_actions, hovered);
     }
 
     /// A still from the episode itself when there is one, else the backdrop, else the poster.

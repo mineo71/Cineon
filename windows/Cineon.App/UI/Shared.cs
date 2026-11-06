@@ -357,6 +357,8 @@ public sealed class RemoteImage : Grid
         {
             _surfaceBrush.Surface = surface;
         }
+        // Only the first picture fades in; a new one replaces the last without the placeholder showing between.
+        fade = fade && _shownKey is null;
         _shownKey = ImageSurfaces.Key(url, _maxPixel);
         if (fade && FadeSeconds > 0)
         {

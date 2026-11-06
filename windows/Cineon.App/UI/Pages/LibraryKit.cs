@@ -397,7 +397,6 @@ public abstract class PressableComponent : Component
         PointerEntered += (_, _) => SetHovered(true);
         PointerExited += (_, _) => SetHovered(false);
         PointerCanceled += (_, _) => SetHovered(false);
-        PointerCaptureLost += (_, _) => SetHovered(false);
         ContextRequested += (_, e) =>
         {
             if (ContextMenu() is { } menu) TitleMenu.Show(menu, this, e);

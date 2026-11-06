@@ -40,6 +40,8 @@ public sealed class LibraryPage : Component
     private readonly ItemsRepeater _list;
 
     private List<Title> _gridItems = [];
+    /// Indices in the grid that show a progress line, worked out once per refresh for the layout.
+    private readonly HashSet<int> _gridProgress = [];
     private List<Title> _listItems = [];
     private readonly Dictionary<UIElement, int> _realizedGrid = [];
     private readonly Dictionary<UIElement, int> _realizedList = [];
@@ -63,7 +65,7 @@ public sealed class LibraryPage : Component
         var header = Ui.VStack(14, _titleHost, filterRow, _summary);
         header.Padding = new Thickness(32, 26, 32, 16);
 
-        _gridLayout.HasProgress = index => index < _gridItems.Count && ShowsProgress(_gridItems[index]);
+        _gridLayout.HasProgress = _gridProgress.Contains;
         _grid = new ItemsRepeater { Layout = _gridLayout, ItemTemplate = RepeaterCells.Template() };
         _grid.ElementPrepared += (_, e) => PrepareGridCell(e.Element, e.Index);
         _grid.ElementClearing += (_, e) => _realizedGrid.Remove(e.Element);
@@ -92,9 +94,6 @@ public sealed class LibraryPage : Component
         VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
     };
 
-    private bool ShowsProgress(Title title) =>
-        title.Status == TitleStatus.Watching && _app.Library.LatestProgress(title.Id) is { IsVisitOnly: false };
-
     private IEnumerable<Title> Filed => _app.Library.Titles.Values.Where(t => t.Status != TitleStatus.None);
 
     private int Count(LibraryList list) => list == LibraryList.All ? Filed.Count() : _app.Library.Titles.Values.Count(t => list.Matches(t));
@@ -105,6 +104,13 @@ public sealed class LibraryPage : Component
         _root.Background = new SolidColorBrush(p.CardFill);
         var downloaded = _query.OnThisMac ? LocalCopies.TitleIds(_app) : null;
         var shown = (_query with { Sort = _sort }).Apply(Filed, downloaded).ToList();
+        var latest = new Dictionary<long, WatchProgress>();
+        foreach (var progress in _app.Library.Progress) latest.TryAdd(progress.TitleId, progress);
+        _gridProgress.Clear();
+        for (var i = 0; i < shown.Count; i++)
+        {
+            if (shown[i].Status == TitleStatus.Watching && latest.GetValueOrDefault(shown[i].Id) is { IsVisitOnly: false }) _gridProgress.Add(i);
+        }
 
         _titleHost.Child = TitleRow();
         _filtersHost.Child = KindsAndFilters();
@@ -500,10 +506,14 @@ internal sealed class AdaptiveGridLayout : VirtualizingLayout
             {
                 var element = context.GetOrCreateElementAt(index);
                 element.Measure(new Windows.Foundation.Size(_itemWidth, double.PositiveInfinity));
-                if (!_learnt && element.DesiredSize.Height > _itemWidth * 1.5)
+                if (element.DesiredSize.Height <= _itemWidth * 1.5) continue;
+                // Learnt from the first cell, and raised if one needs more (a fallback font, say), so
+                // no cell runs into the row below.
+                var text = element.DesiredSize.Height - _itemWidth * 1.5 - (HasProgress?.Invoke(index) == true ? ProgressHeight : 0);
+                if (!_learnt || text > _textHeight + 0.5)
                 {
                     _learnt = true;
-                    _textHeight = element.DesiredSize.Height - _itemWidth * 1.5 - (HasProgress?.Invoke(index) == true ? ProgressHeight : 0);
+                    _textHeight = text;
                     PlaceRows(count, rows);
                 }
             }
@@ -696,11 +706,7 @@ internal sealed class ChecklistRow : Component
             _background.BackgroundTransition = animated ? new BrushTransition { Duration = TimeSpan.FromSeconds(0.12) } : null;
             _background.Background = new SolidColorBrush(_hovered ? p.Raised : Palette.WithOpacity(p.Raised, 0));
         }
-        if (_find is not null)
-        {
-            _find.Visibility = _hovered ? Visibility.Visible : Visibility.Collapsed;
-            Motion.Fade(_find, _hovered ? 1 : 0, animated ? 0.12 : 0);
-        }
+        if (_find is not null) Motion.Reveal(_find, _hovered, animated ? 0.12 : 0);
     }
 
     protected override UIElement Render()
