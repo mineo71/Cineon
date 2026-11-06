@@ -24,7 +24,7 @@ FindBar, SearchDeckBar). Everything here lives on the UI thread; every WebView2 
 - `Browser/WatchTracker.cs`, `EpisodeAutopilot.cs`, `Rescue.cs` (also `SiteProbe`, `RescueSession`,
   `RescueProbe`), `FrameCollector.cs` (also `FrameImage`, `ColorZones`, `DecodedImage`, `FrameState`),
   `WindowCapture.cs`, `HeadlessWebView.cs`, `DownloadBridge.cs` (`RequestContext`, `EpisodeResolver`,
-  `HelperTab`), `PartyPlayer.cs` (Core Together's `IPartyPlayer` over the browser), `Safe.cs`.
+  `HelperTab`), `Safe.cs`.
 - `Services/DownloadHost.cs`: `IDownloadHost` (toasts, `AppModel.PlayDownload`, Recycle Bin through
   SHFileOperation, `explorer /select,`, video duration from Windows.Storage).
 - UI: `UI/Workspace.cs` (Workspace, AmbientLight), `UI/BrowserBar.cs` (BrowserBar, DownloadMenu, TabStrip,
@@ -61,7 +61,10 @@ FindBar, SearchDeckBar). Everything here lives on the UI thread; every WebView2 
 - The Relink sheet (Sheets port) calls `session.Tracker.Relink(app.Browser.Selected, id, ref)`.
 - The player route sits in the same framed screen: the workspace frames `Route.Player` too, so the
   LocalPlayer page just fills what it's given.
-- `new PartyPlayer(session.Browser)` is the `IPartyPlayer` for Core's TogetherModel.
+- Together's `PartyPlayer` (TogetherHost.cs) drives tabs through `Load`, `EvaluateInPlayerAsync`,
+  `PlayerCommand`, `ShowBanner` and `Parsed`.
+- `session.Web.ClearBrowsingDataAsync()` clears the profile's cookies, logins, cache and storage (Settings'
+  Clear cookies and logins).
 
 ## Wiring done outside Browser/ (small, additive)
 - `ProfileSession`: `Tracker`, `Metadata`, `Downloads`, `Seasons`, `RequestContext`, created in the Mac's
@@ -71,6 +74,8 @@ FindBar, SearchDeckBar). Everything here lives on the UI thread; every WebView2 
 - `MainWindow`: hosts `Workspace` (which holds `PageHost`; PageHost's own inset is now 0), the top bar follows
   `app.ShowsBars`, and keys whose source is a WebView2 are left to the page's forwarder (no double handling).
 - `TopBar`: the NowPlayingPill before the tools; Browse with nothing selected opens the first tab.
+- `TogetherHost.cs` (`PartyPlayer`) and `UI/Pages/SettingsPage.cs` (Clear cookies and logins): their
+  TODO(port-browser) stand-ins filled.
 - `Pages`: `Route.Web` is `WebOverlays`.
 
 ## Debug hooks (for the debug port; nothing is served)
