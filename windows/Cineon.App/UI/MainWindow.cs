@@ -37,8 +37,8 @@ public sealed class MainWindow : Window
             presenter.PreferredMinimumWidth = 860;
             presenter.PreferredMinimumHeight = 540;
         }
-        var scale = (double)(Microsoft.UI.Windowing.DisplayArea.Primary?.WorkArea.Height ?? 900) >= 1000 ? 1.0 : 0.9;
-        AppWindow.Resize(new SizeInt32((int)(1360 * scale), (int)(860 * scale)));
+        WindowPlacement.Restore(AppWindow, 1360, 860);
+        WindowPlacement.Track(AppWindow);
 
         _topBar = new TopBar(app, this);
         _pages = new PageHost(app);

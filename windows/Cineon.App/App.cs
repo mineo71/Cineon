@@ -49,6 +49,20 @@ public sealed class App : Application, IXamlMetadataProvider
             Guard("activation", () => Activation.Handle(activation, Model));
         }));
         Guard("launch", () => Activation.Handle(LaunchActivation(), Model, _args));
+        Guard("test route", ShowTestRoute);
+    }
+
+    /// Test runs on scratch data can open straight on a screen (`CINEON_ROUTE=settings`, or `dark` /
+    /// `light` with `CINEON_THEME`), so the build machine can photograph each one.
+    private static void ShowTestRoute()
+    {
+        if (!Cineon.Core.Data.AppPaths.IsScratch) return;
+        var theme = Environment.GetEnvironmentVariable("CINEON_THEME");
+        if (theme is "light" or "dark" && Model.IsDark != (theme == "dark")) Model.ToggleTheme();
+        var route = Environment.GetEnvironmentVariable("CINEON_ROUTE");
+        if (string.IsNullOrEmpty(route) || !Enum.TryParse<Route>(route, ignoreCase: true, out var destination)) return;
+        Model.SplashVisible = false;
+        Model.Go(destination);
     }
 
     private static void Guard(string what, Action action)

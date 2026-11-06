@@ -93,6 +93,26 @@ public sealed class WebEnvironment
         RulesChanged?.Invoke();
     }
 
+    /// Clears this profile's cookies, logins, cache and site storage. False when WebView2 couldn't.
+    public async Task<bool> ClearBrowsingDataAsync()
+    {
+        if (await HeadlessWebView.CreateAsync(this) is not { } view) return false;
+        try
+        {
+            await view.Core.Profile.ClearBrowsingDataAsync();
+            return true;
+        }
+        catch (Exception error)
+        {
+            CrashLog.Write("clear browsing data", error);
+            return false;
+        }
+        finally
+        {
+            view.Close();
+        }
+    }
+
     public void Teardown()
     {
         IsTornDown = true;

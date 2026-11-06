@@ -9,6 +9,9 @@ public static class Pages
     {
         // The site itself is in the workspace's web layer; this is what floats over it.
         Route.Web => new WebOverlays(app),
+        Route.Together => new TogetherPage(app),
+        Route.Profile => new ProfilePage(app),
+        Route.Settings => new SettingsPage(app),
         _ => Placeholder(app.Route.ToString()),
     };
 
