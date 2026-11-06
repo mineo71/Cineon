@@ -42,27 +42,38 @@ public sealed class WebEnvironment
     /// The profile closed: no new web views from here.
     public bool IsTornDown { get; private set; }
 
+    /// Completes when the current environment's browser process has gone.
+    private TaskCompletionSource? _exited;
+
     /// The environment, created once on first use. Call on the UI thread.
     public Task<CoreWebView2Environment> EnvironmentAsync()
     {
         if (IsTornDown) return Task.FromException<CoreWebView2Environment>(new ObjectDisposedException(nameof(WebEnvironment)));
-        return _environment ??= CreateAsync();
+        // A failed attempt is tried again, for instance after the WebView2 runtime is installed.
+        if (_environment is { IsFaulted: true } or { IsCanceled: true }) _environment = null;
+        return _environment ??= CreateAsync(null);
     }
 
-    private async Task<CoreWebView2Environment> CreateAsync()
+    private async Task<CoreWebView2Environment> CreateAsync(Task? previousExit)
     {
-        try
-        {
-            Directory.CreateDirectory(UserDataFolder);
-            var options = new CoreWebView2EnvironmentOptions { AdditionalBrowserArguments = BrowserArguments };
-            return await CoreWebView2Environment.CreateWithOptionsAsync("", UserDataFolder, options);
-        }
-        catch (Exception)
-        {
-            // Let the next tab try again, for instance after the WebView2 runtime is installed.
-            _environment = null;
-            throw;
-        }
+        await Task.Yield();
+        // The same user data folder can only take a new browser once the old one has exited.
+        if (previousExit is not null) await Task.WhenAny(previousExit, Task.Delay(TimeSpan.FromSeconds(10)));
+        Directory.CreateDirectory(UserDataFolder);
+        var options = new CoreWebView2EnvironmentOptions { AdditionalBrowserArguments = BrowserArguments };
+        var environment = await CoreWebView2Environment.CreateWithOptionsAsync("", UserDataFolder, options);
+        var exited = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _exited = exited;
+        environment.BrowserProcessExited += Safe.On<CoreWebView2Environment, CoreWebView2BrowserProcessExitedEventArgs>(
+            "browser exited", (_, _) => exited.TrySetResult());
+        return environment;
+    }
+
+    /// The browser process died: the next web view waits for it to be gone and starts a new one.
+    internal void BrowserProcessFailed()
+    {
+        if (IsTornDown || _environment is not { IsCompletedSuccessfully: true }) return;
+        _environment = CreateAsync(_exited?.Task);
     }
 
     /// Starts the browser process early, so the first tab paints without waiting for it. The Mac

@@ -136,7 +136,7 @@ public sealed partial class BrowserTab
     {
         var action = body.Text("action");
         var downloads = Session.Downloads;
-        var best = BestSource?.Url.OriginalString;
+        var best = BestSource is { } source ? MediaUrls.Progressive(source.Url.OriginalString) : null;
         if (action == "retry" && downloads.Items.FirstOrDefault(i => i.SourceUrl.OriginalString == best && i.Status == DownloadStatus.Failed) is { } existing)
         {
             downloads.Retry(existing.Id);

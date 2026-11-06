@@ -13,6 +13,7 @@ public sealed class RequestContext : IRequestContext
     /// A parked web view for when no tab has one, kept until the profile closes.
     private HeadlessWebView? _service;
     private Task<HeadlessWebView?>? _starting;
+    private bool _isClosed;
 
     public RequestContext(ProfileSession session)
     {
@@ -58,10 +59,18 @@ public sealed class RequestContext : IRequestContext
 
     private async Task<HeadlessWebView?> StartAsync()
     {
+        // So `_starting` is stored before this can finish, even when it fails at once.
+        await Task.Yield();
         try
         {
-            _service = await HeadlessWebView.CreateAsync(_session.Web);
-            return _service;
+            var service = await HeadlessWebView.CreateAsync(_session.Web);
+            if (_isClosed)
+            {
+                service?.Close();
+                return null;
+            }
+            _service = service;
+            return service;
         }
         finally
         {
@@ -71,6 +80,7 @@ public sealed class RequestContext : IRequestContext
 
     public void Close()
     {
+        _isClosed = true;
         _service?.Close();
         _service = null;
     }

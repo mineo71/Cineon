@@ -73,12 +73,20 @@ public static class PageExtras
           };
           window.addEventListener('pointerdown', note, true);
           window.addEventListener('keydown', (e) => { if (e.key === 'Enter') note(e); }, true);
-          window.addEventListener('submit', (e) => {
-            if (!e.isTrusted) return;
-            const form = e.target;
+          const noteForm = (form) => {
             const action = form && form.action ? String(form.action) : location.href;
             h.cineonLink.postMessage({ href: action, top, form: true });
-          }, true);
+          };
+          window.addEventListener('submit', (e) => { if (e.isTrusted) noteForm(e.target); }, true);
+          // A form the page submits by itself, which WebKit also counts as a form submission.
+          const proto = window.HTMLFormElement && HTMLFormElement.prototype;
+          if (proto) {
+            for (const name of ['submit', 'requestSubmit']) {
+              const original = proto[name];
+              if (typeof original !== 'function') continue;
+              proto[name] = function (...args) { try { noteForm(this); } catch (_) {} return original.apply(this, args); };
+            }
+          }
         })();
         """;
 
@@ -119,5 +127,5 @@ public static class PageExtras
     /// Page zoom. WinUI's WebView2 doesn't expose the controller's zoom factor, so the zoom is CSS
     /// zoom on the page, put back on every new document in the tab.
     public static string Zoom(double factor) =>
-        $"(() => {{ const z = {Json.Num(factor)}; const apply = () => {{ if (document.documentElement) document.documentElement.style.zoom = z === 1 ? '' : String(z); }}; if (document.documentElement) apply(); else document.addEventListener('DOMContentLoaded', apply, {{ once: true }}); }})();";
+        $"(() => {{ if (window.top !== window) return; const z = {Json.Num(factor)}; const apply = () => {{ if (document.documentElement) document.documentElement.style.zoom = z === 1 ? '' : String(z); }}; if (document.documentElement) apply(); else document.addEventListener('DOMContentLoaded', apply, {{ once: true }}); }})();";
 }

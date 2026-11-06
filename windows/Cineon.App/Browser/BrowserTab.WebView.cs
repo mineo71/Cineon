@@ -28,6 +28,10 @@ public sealed partial class BrowserTab
     private string? _pendingMainUrl;
     /// A download took this navigation over, so its failure isn't a failure.
     private bool _downloadTookOver;
+    /// `_pendingMainUrl` without its fragment, which requests and responses never carry.
+    private string? _pendingMainRequest;
+    /// Bumped with every zoom change, so a slower earlier one doesn't win.
+    private int _zoomSequence;
     /// The main-frame navigation in flight, so a cancelled or replaced one's end is ignored.
     private ulong? _navigationId;
     /// The host of `_documentUrl`, worked out once per page rather than per request.
@@ -74,8 +78,10 @@ public sealed partial class BrowserTab
         return control;
     }
 
-    private async Task InitializeAsync(WebView2 control, int generation, CoreWebView2NewWindowRequestedEventArgs? popup, Windows.Foundation.Deferral? deferral)
+    private async Task InitializeAsync(WebView2 control, int generation, CoreWebView2NewWindowRequestedEventArgs? popup,
+        Windows.Foundation.Deferral? deferral, Action? adopted = null)
     {
+        var isAdopted = false;
         try
         {
             var environment = await Session.Web.EnvironmentAsync();
@@ -87,6 +93,7 @@ public sealed partial class BrowserTab
             if (popup is not null)
             {
                 popup.NewWindow = core;
+                isAdopted = true;
             }
             else
             {
@@ -96,17 +103,21 @@ public sealed partial class BrowserTab
         catch (Exception error)
         {
             CrashLog.Write("web view", error);
-            if (generation == _generation && popup is null)
+            if (generation == _generation)
             {
+                // Let a later Load or Reload try again with a new web view.
+                TearDownWebView();
+                IsHibernated = true;
                 Failure = new LoadFailure(Url is { } url ? WatchTracker.Host(url) ?? "This site" : "This site",
                     "Cineon couldn't start its web view. Check that the Microsoft Edge WebView2 Runtime is installed.", Url);
             }
         }
         finally
         {
-            // A pop-up whose tab went away must not open in a window of WebView2's own.
-            if (popup is not null && generation != _generation) popup.Handled = true;
+            // A pop-up that didn't get its tab must not open in a window of WebView2's own.
+            if (popup is not null && !isAdopted) popup.Handled = true;
             deferral?.Complete();
+            if (isAdopted) Safe.Run("pop-up adopted", () => adopted?.Invoke());
         }
     }
 
@@ -142,14 +153,15 @@ public sealed partial class BrowserTab
         });
     }
 
-    /// Opens as the new window a page asked for, so `window.opener` still works.
-    internal void AdoptPopup(CoreWebView2NewWindowRequestedEventArgs args)
+    /// Opens as the new window a page asked for, so `window.opener` still works. `adopted` runs
+    /// once the page has its new window.
+    internal void AdoptPopup(CoreWebView2NewWindowRequestedEventArgs args, Action? adopted = null)
     {
         var deferral = args.GetDeferral();
         var control = MakeControl();
         _pendingNavigation = null;
         var generation = _generation;
-        Safe.Fire("pop-up web view", () => InitializeAsync(control, generation, args, deferral));
+        Safe.Fire("pop-up web view", () => InitializeAsync(control, generation, args, deferral, adopted));
     }
 
     private async Task AttachAsync(CoreWebView2 core, int generation)
@@ -183,8 +195,12 @@ public sealed partial class BrowserTab
 
         await InstallScriptsAsync(bridge, generation);
         if (generation != _generation) return;
-        if (_zoom != 1) _zoomScriptId = await core.AddScriptToExecuteOnDocumentCreatedAsync(PageExtras.Zoom(_zoom));
-        if (generation != _generation) return;
+        if (_zoom != 1)
+        {
+            var id = await core.AddScriptToExecuteOnDocumentCreatedAsync(PageExtras.Zoom(_zoom));
+            if (generation != _generation) return;
+            _zoomScriptId = id;
+        }
         _bridge = bridge;
         _core = core;
         CanGoBack = core.CanGoBack;
@@ -272,7 +288,10 @@ public sealed partial class BrowserTab
         _mediaFrameUrl = null;
         _documentUrl = null;
         _pendingMainUrl = null;
+        _pendingMainRequest = null;
         _navigationId = null;
+        _findTerm = null;
+        _zoomSequence++;
         _sniffed.Clear();
         ForgetSources();
         IsLoading = false;
@@ -352,15 +371,23 @@ public sealed partial class BrowserTab
         if (Math.Abs(factor - _zoom) < 0.001 || _core is not { } core) return;
         _zoom = Math.Round(factor, 2);
         var generation = _generation;
+        var sequence = ++_zoomSequence;
+        var zoom = _zoom;
         Safe.Fire("zoom", async () =>
         {
             if (_zoomScriptId is { } old) core.RemoveScriptToExecuteOnDocumentCreated(old);
             _zoomScriptId = null;
-            var script = PageExtras.Zoom(_zoom);
-            if (_zoom != 1)
+            var script = PageExtras.Zoom(zoom);
+            if (zoom != 1)
             {
                 var id = await core.AddScriptToExecuteOnDocumentCreatedAsync(script);
-                if (generation == _generation) _zoomScriptId = id;
+                // A later change, or a new web view, has taken over.
+                if (generation != _generation || sequence != _zoomSequence)
+                {
+                    if (generation == _generation) core.RemoveScriptToExecuteOnDocumentCreated(id);
+                    return;
+                }
+                _zoomScriptId = id;
             }
             await core.ExecuteScriptAsync(script);
         });
@@ -378,6 +405,7 @@ public sealed partial class BrowserTab
             return;
         }
         _pendingMainUrl = raw;
+        _pendingMainRequest = WithoutFragment(raw);
         _navigationId = args.NavigationId;
         _missingPageUrl = null;
         _downloadTookOver = false;
@@ -411,7 +439,8 @@ public sealed partial class BrowserTab
             return true;
         }
 
-        if (args.IsUserInitiated && !args.IsRedirected && RecentLink(target) is { } link)
+        // A link or form someone pressed, or a form a page submits by itself (always allowed on the Mac).
+        if (!args.IsRedirected && (args.IsUserInitiated || _lastLink is { Form: true }) && RecentLink(target) is { } link)
         {
             // A link inside a frame trying to replace the whole page is a classic hijack.
             if (!link.Top && !link.Form && settings.RedirectShield && !prefs.ShieldsOff && !prefs.AllowRedirects
@@ -451,6 +480,7 @@ public sealed partial class BrowserTab
     {
         Progress = Math.Max(Progress, 0.5);
         if (args.IsErrorPage) return;
+        _findTerm = null;
         _trustedNavigation = false;
         Session.Rescue.Stop(this);
         if (!WantsAutoplay(core.Source)) _autoplayKey = null;
@@ -537,6 +567,7 @@ public sealed partial class BrowserTab
         var isSelected = Browser.SelectedId == Id;
         if (args.ProcessFailedKind == CoreWebView2ProcessFailedKind.BrowserProcessExited)
         {
+            Session.Web.BrowserProcessFailed();
             TearDownWebView();
             IsHibernated = true;
             if (isSelected) EnsureWebView();
@@ -611,7 +642,7 @@ public sealed partial class BrowserTab
         if (rules.IsEmpty) return;
         var uri = args.Request.Uri;
         var type = (ResourceType)(int)args.ResourceContext;
-        var isMainFrame = type == ResourceType.Document && uri == _pendingMainUrl;
+        var isMainFrame = type == ResourceType.Document && uri == _pendingMainRequest;
         var document = isMainFrame ? uri : _documentUrl ?? _pendingMainUrl;
         if (_documentHost.Url != document) _documentHost = (document, Urls.Parse(document) is { } page ? WatchTracker.Host(page) : null);
         if (Session.Shields.ShieldsOff(_documentHost.Host)) return;
@@ -627,7 +658,7 @@ public sealed partial class BrowserTab
     {
         var uri = args.Request.Uri;
         var response = args.Response;
-        if (uri == _pendingMainUrl) _missingPageUrl = IsGone(response.StatusCode, response.Headers) ? Urls.Parse(uri) : null;
+        if (uri == _pendingMainRequest) _missingPageUrl = IsGone(response.StatusCode, response.Headers) ? Urls.Parse(_pendingMainUrl) : null;
         if (response.StatusCode is < 200 or >= 400) return;
         Sniff(uri, response.Headers, args.Request.Headers);
     }
@@ -663,6 +694,15 @@ public sealed partial class BrowserTab
         args.ResultFilePath = target;
         args.Handled = true;
         Session.Toasts.Show($"Downloading {Path.GetFileName(target)} to Downloads");
+    }
+}
+
+public sealed partial class BrowserTab
+{
+    private static string WithoutFragment(string url)
+    {
+        var hash = url.IndexOf('#');
+        return hash < 0 ? url : url[..hash];
     }
 }
 

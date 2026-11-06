@@ -86,7 +86,12 @@ FindBar, SearchDeckBar). Everything here lives on the UI thread; every WebView2 
 ## Not 1:1, and why
 - No content worlds: WebView2 injects into the page's own world, so `window.__cineon` is visible to pages
   (ScriptBridge's choice). The CSS for ad rules is a constructed stylesheet added at document start, not a
-  WebKit user stylesheet.
+  WebKit user stylesheet. A consequence: a page could post `cineonKey` (run an app shortcut, such as close
+  tab) or a made-up `cineonLink` (get its own cross-site redirect past the shield). Nothing a page can do
+  through them goes beyond what the person could press; worth closing if WebView2 ever offers isolated worlds
+  for injected scripts.
+- A form a page submits by script (`form.submit()`, `requestSubmit()`) is reported by `PageExtras.Links` and
+  allowed, as WebKit's `.formSubmitted` is.
 - No WebKit navigation types. WebView2 says only whether a navigation had a gesture, so `PageExtras.Links`
   reports the link (or form) pressed and the redirect shield treats a gesture without one as a script
   navigation, like WebKit's `.other`. The iframe-link hijack check uses that report's frame.
@@ -117,6 +122,11 @@ FindBar, SearchDeckBar). Everything here lives on the UI thread; every WebView2 
   the network saw (by URL, or an HLS content type), kept only when their Referer is the reporting frame.
 - Helper tabs and rescue probes are plain WebView2 controllers parked outside the main window's client
   area (the Mac's windowless web views), so they need the main window to exist.
+- If WebView2's browser process dies, every tab of the profile loses its page; the environment is made again
+  once the old process has exited (at most 10 s) and the selected tab reloads. WebKit restarts only the
+  web content process.
+- A pop-up opened from a search result tab gets its window before the search closes (WebView2 needs the
+  opener alive until then); the Mac closes the search first.
 - Tab dragging reorders on drop (the Mac moves tabs live while dragging). The download button's menu opens
   on right-click or press-and-hold (the Mac's long press), and its tooltip says so.
 - Shield "off" icon is Fluent's blocked glyph; there's no shield-slash.

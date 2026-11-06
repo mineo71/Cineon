@@ -247,10 +247,17 @@ public sealed class BrowserModel : Observable
     {
         var tab = new BrowserTab(this, target);
         Insert(tab, after: opener);
-        EndSearch(null);
         SelectedId = tab.Id;
         GoTo(Cineon.App.Route.Web);
-        tab.AdoptPopup(args);
+        // The opener may be a search result, which ending the search tears down: the page gets its
+        // new window first.
+        tab.AdoptPopup(args, () =>
+        {
+            if (Search is null) return;
+            EndSearch(null);
+            if (_tabs.Contains(tab)) SelectedId = tab.Id;
+        });
+        if (Search is null) Views.ShowSelected();
         ScheduleSave();
     }
 
