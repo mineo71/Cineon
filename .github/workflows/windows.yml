@@ -1,0 +1,60 @@
+name: windows
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "windows/**"
+      - "Cineon/Resources/Scripts/**"
+      - "Cineon/Resources/Filters/**"
+      - "fixtures/**"
+      - ".github/workflows/windows.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Core tests
+        run: dotnet test --project Cineon.Core.Tests
+
+      - name: Build the app
+        run: dotnet build Cineon.App -c Debug -r win-x64 -v minimal
+
+      - name: Launch and screenshot
+        run: |
+          $data = Join-Path $env:RUNNER_TEMP "cineon-data"
+          New-Item -ItemType Directory -Force $data | Out-Null
+          $env:CINEON_DATA_DIR = $data
+          $exe = Resolve-Path "Cineon.App/bin/Debug/net10.0-windows10.0.19041.0/win-x64/Cineon.exe"
+          $p = Start-Process $exe -PassThru
+          Start-Sleep -Seconds 15
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+          [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+          New-Item -ItemType Directory -Force ../artifacts | Out-Null
+          $bmp.Save("../artifacts/launch.png")
+          if ($p.HasExited) { Write-Error "Cineon exited with code $($p.ExitCode)"; exit 1 }
+          Stop-Process -Id $p.Id -Force
+          Get-ChildItem $data -Recurse | Select-Object FullName, Length | Format-Table -AutoSize
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-artifacts
+          path: artifacts/

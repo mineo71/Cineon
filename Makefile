@@ -3,7 +3,7 @@ SCHEME  := Cineon
 DERIVED := build
 DIST    := dist
 
-.PHONY: all project debug run test e2e filters assets install release clean
+.PHONY: all project debug run test e2e filters assets install release clean win-test win-check
 
 all: project
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration Release \
@@ -57,6 +57,13 @@ install: all
 	rm -rf /Applications/Cineon.app
 	cp -R $(DIST)/Cineon.app /Applications/Cineon.app
 	@echo "Installed /Applications/Cineon.app"
+
+# The Windows app (see windows/PLAN.md). Real builds run on GitHub's Windows runners.
+win-test:
+	cd windows && dotnet test --project Cineon.Core.Tests
+
+win-check:
+	dotnet build windows/Cineon.App -p:MacCheck=true -v q -nologo
 
 # make release VERSION=1.2.0 (see scripts/release.sh)
 release:

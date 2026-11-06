@@ -11,3 +11,6 @@ __pycache__/
 design/screenshots/
 design/asset-check.png
 Cineon.xcodeproj/
+windows/**/bin/
+windows/**/obj/
+windows/**/TestResults/

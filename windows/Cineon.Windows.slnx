@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Cineon.App/Cineon.App.csproj" />
+  <Project Path="Cineon.Core.Tests/Cineon.Core.Tests.csproj" />
+  <Project Path="Cineon.Core/Cineon.Core.csproj" />
+</Solution>
