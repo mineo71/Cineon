@@ -774,10 +774,8 @@ internal sealed class PrivacySettings
     private async Task ClearCookies(FrameworkElement anchor)
     {
         if (!await SocialKit.ConfirmAsync(anchor, "Clear cookies and logins?", "You'll be signed out of every site in this profile.", "Clear cookies and logins")) return;
-        // TODO(port-browser): clear this profile's WebView2 data (the Mac's dataStore.removeData(ofTypes: all,
-        // modifiedSince: .distantPast)), e.g. `await _app.Session.Web.ClearBrowsingDataAsync()` through
-        // CoreWebView2Profile.ClearBrowsingDataAsync(), then:
-        //   _app.Toasts.Show("Cookies and logins cleared");
+        // The Mac's dataStore.removeData(ofTypes: all, modifiedSince: .distantPast).
+        if (await _app.Session.Web.ClearBrowsingDataAsync()) _app.Toasts.Show("Cookies and logins cleared");
     }
 
     private async Task Export()

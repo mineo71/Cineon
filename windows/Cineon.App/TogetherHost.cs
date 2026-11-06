@@ -53,8 +53,6 @@ internal sealed class TogetherHost(ProfileSession session) : ITogetherHost
 
 /// The browser tabs as a watch party drives them: BrowserModel and BrowserTab behind Core's
 /// IPartyPlayer. Tabs are named by id; a closed tab is null and every call on it does nothing.
-// TODO(port-browser): fill in Load, EvaluateInPlayerAsync, PlayerCommand and ShowBanner with the real
-// tab (see windows/notes/together.md, "IPartyPlayer"), and Parsed once BrowserTab has it.
 internal sealed class PartyPlayer(ProfileSession session) : IPartyPlayer
 {
     private BrowserModel Browser => session.Browser;
@@ -65,28 +63,16 @@ internal sealed class PartyPlayer(ProfileSession session) : IPartyPlayer
 
     public Guid OpenTab(Uri url, bool select) => Browser.OpenTab(url, select).Id;
 
-    public void Load(Guid tab, Uri url)
-    {
-        if (Find(tab) is null) return;
-        // TODO(port-browser): tab.Load(url)
-    }
+    public void Load(Guid tab, Uri url) => Find(tab)?.Load(url);
 
-    public Task<string?> EvaluateInPlayerAsync(Guid tab, string script)
-    {
-        // TODO(port-browser): run `script` in the frame that holds the video (CoreWebView2Frame.ExecuteScriptAsync,
-        // or the top frame) and return WebView2's JSON result text.
-        return Task.FromResult<string?>(null);
-    }
+    /// Runs in the frame that holds the video, or the top frame, and gives WebView2's JSON text.
+    public Task<string?> EvaluateInPlayerAsync(Guid tab, string script) =>
+        Find(tab) is { } found ? found.EvaluateInPlayerAsync(script) : Task.FromResult<string?>(null);
 
-    public void PlayerCommand(Guid tab, string command)
-    {
-        // TODO(port-browser): `window.__cineon && __cineon.<command>;` in the video's frame, without waiting.
-    }
+    /// `window.__cineon && __cineon.<command>;` in the video's frame, without waiting.
+    public void PlayerCommand(Guid tab, string command) => Find(tab)?.PlayerCommand(command);
 
-    public void ShowBanner(Guid tab, string id, string text, double timeout)
-    {
-        // TODO(port-browser): tab.ShowBanner(id, text, timeout), media.js's __cineon.banner.
-    }
+    public void ShowBanner(Guid tab, string id, string text, double timeout) => Find(tab)?.ShowBanner(id, text, timeout: timeout);
 
     private BrowserTab? Find(Guid id) => Browser.Tabs.FirstOrDefault(t => t.Id == id);
 
@@ -95,6 +81,5 @@ internal sealed class PartyPlayer(ProfileSession session) : IPartyPlayer
         tab.Url,
         tab.Media is { } media ? new PartyMedia(media.Position, media.Duration, media.IsPlaying, media.Rate) : null,
         tab.LinkedTitleId,
-        // TODO(after core merge): tab.Parsed as `new TitleCard(parsed.Name, parsed.Year, parsed.KindHint.ToRaw())`.
-        Parsed: null);
+        Parsed: tab.Parsed is { } parsed ? new TitleCard(parsed.Name, parsed.Year, parsed.KindHint.ToRaw()) : null);
 }

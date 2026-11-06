@@ -80,7 +80,8 @@ public sealed class TopBar : Component
 
         var leading = Ui.HStack(0, logo).Padding(16, 0, 0, 0);
         var middle = new SectionTabs(_app, Style(_width), OnHero);
-        var trailing = Ui.HStack(10, toolsCapsule, avatar).Padding(0, 0, Math.Max(16, _window.CaptionButtonsWidth + 12), 0);
+        var trailing = Ui.HStack(10, new NowPlayingPill(_app, compact: _width < 1360, onHero: OnHero), toolsCapsule, avatar)
+            .Padding(0, 0, Math.Max(16, _window.CaptionButtonsWidth + 12), 0);
 
         var bar = new CentredBar(14) { Children = { leading, middle, trailing } };
         bar.Height = Height;
@@ -198,7 +199,12 @@ public sealed class SectionTabs : Component
             UIElement label = _look == Look.Icons
                 ? icon
                 : Ui.HStack(6, icon, Ui.Line(item.Label, Typeface.Ui(13, Typeface.Medium), ink));
-            var button = Buttons.Make(label, () => _app.Go(item.Route), (b, hovered, _) =>
+            var button = Buttons.Make(label, () =>
+            {
+                // Browse with nothing chosen opens the first tab, as the Mac does.
+                if (item.Route == Route.Web && _app.Browser.Selected is null && _app.Browser.ListedTabs is [var first, ..]) _app.Browser.Select(first);
+                _app.Go(item.Route);
+            }, (b, hovered, _) =>
             {
                 b.Background = selected ? p.Silver : new SolidColorBrush(hovered ? p.Raised2 : Microsoft.UI.Colors.Transparent);
             }, help: _look == Look.Icons ? item.Label : null);

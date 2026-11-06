@@ -388,20 +388,26 @@ public sealed partial class AppModel : Observable
             Toasts.Show($"Added {linked.Name} to backlog");
             return;
         }
-        // TODO(after core merge): the page TitleParser recognised, as the Mac does:
-        //   if (tab.Parsed is not { } parsed) { Sheet = new AppSheet.AddTitle(tab.Title); return; }
-        //   if (Library.Find(parsed.Name, parsed.AltName, parsed.Year) is { } existing)
-        //   {
-        //       if (existing.Status == TitleStatus.None) Library.SetStatus(existing.Id, TitleStatus.Backlog);
-        //       var status = Library.Titles.GetValueOrDefault(existing.Id)?.Status.Label.ToLowerInvariant() ?? "your library";
-        //       Toasts.Show($"{existing.Name} is in {status}");
-        //       return;
-        //   }
-        //   if (Library.AddTitle(parsed.Name, parsed.Year, parsed.KindHint, TitleStatus.Backlog,
-        //           posterUrl: parsed.PosterUrl, overview: parsed.Overview) is not { } title) return;
-        //   Session.Metadata.Enrich(title.Id, altName: parsed.AltName);
-        //   Toasts.Show($"Added {title.Name} to backlog", "Undo", () => Library.Delete(title.Id));
-        Sheet = new AppSheet.AddTitle(tab.Title);
+        // The page TitleParser recognised.
+        if (tab.Parsed is not { } parsed)
+        {
+            Sheet = new AppSheet.AddTitle(tab.Title);
+            return;
+        }
+        if (Library.Find(parsed.Name, parsed.AltName, parsed.Year) is { } existing)
+        {
+            if (existing.Status == TitleStatus.None) Library.SetStatus(existing.Id, TitleStatus.Backlog);
+            var status = Library.Titles.GetValueOrDefault(existing.Id)?.Status.Label.ToLowerInvariant() ?? "your library";
+            Toasts.Show($"{existing.Name} is in {status}");
+            return;
+        }
+        if (Library.AddTitle(parsed.Name, parsed.Year, parsed.KindHint, TitleStatus.Backlog,
+                posterUrl: parsed.PosterUrl, overview: parsed.Overview) is not { } title)
+        {
+            return;
+        }
+        Session.Metadata.Enrich(title.Id, altName: parsed.AltName);
+        Toasts.Show($"Added {title.Name} to backlog", "Undo", () => Library.Delete(title.Id));
     }
 
     // TODO(after core merge): public void AddToBacklog(MetadataHit hit)
@@ -442,24 +448,21 @@ public sealed partial class AppModel : Observable
             Toasts.Show("Open a film's page first, then download it from there");
             return;
         }
-        // TODO(after core merge): Session.Downloads.Download(from: tab)
-        _ = tab;
+        Session.Downloads.Download(tab);
     }
 
     /// The Watch menu's "Download the Rest of This Season".
     public void DownloadRestOfSeason()
     {
         if (Browser.Selected is not { } tab) return;
-        // TODO(after core merge): Session.Seasons.Start(from: tab, fromCurrent: true)
-        _ = tab;
+        Session.Seasons.Start(tab, fromCurrent: true);
     }
 
     /// The Watch menu's "Download the Whole Series…".
     public void DownloadWholeSeries()
     {
         if (Browser.Selected is not { } tab) return;
-        // TODO(after core merge): Session.Seasons.StartSeries(from: tab)
-        _ = tab;
+        Session.Seasons.StartSeries(tab);
     }
 
     // MARK: Cinema mode

@@ -41,6 +41,9 @@ public static class PageScripts
               cineonMeta: make('cineonMeta'),
               cineonMediaReply: make('cineonMediaReply', true),
               cineonShield: make('cineonShield'),
+              cineonKey: make('cineonKey'),
+              cineonLink: make('cineonLink'),
+              cineonCss: make('cineonCss', true),
             },
             enumerable: false,
           });
@@ -81,7 +84,8 @@ public static class PageScripts
 /// One message from a page script.
 public sealed class ScriptMessage
 {
-    /// `cineonMedia`, `cineonMeta`, `cineonMediaReply` or `cineonShield`.
+    /// `cineonMedia`, `cineonMeta`, `cineonMediaReply` or `cineonShield`, or one of the Windows
+    /// scripts' `cineonKey`, `cineonLink` and `cineonCss` (see `PageExtras`).
     public required string Handler { get; init; }
     public required JsonElement Body { get; init; }
     /// The frame that sent it, or null for the main frame.
@@ -113,28 +117,35 @@ public sealed class ScriptBridge
     public ScriptBridge(CoreWebView2 web)
     {
         _web = web;
-        _web.WebMessageReceived += (_, e) => Handle(e.WebMessageAsJson, e.Source, null, json => _web.PostWebMessageAsJson(json));
-        _web.FrameCreated += (_, e) => Follow(e.Frame);
+        _web.WebMessageReceived += Safe.On<CoreWebView2, CoreWebView2WebMessageReceivedEventArgs>("page message",
+            (_, e) => Handle(e.WebMessageAsJson, e.Source, null, json => { try { _web.PostWebMessageAsJson(json); } catch { } }));
+        _web.FrameCreated += Safe.On<CoreWebView2, CoreWebView2FrameCreatedEventArgs>("frame created", (_, e) => Follow(e.Frame));
     }
 
     private void Follow(CoreWebView2Frame frame)
     {
         _frames[frame] = true;
-        frame.Destroyed += (_, _) => _frames.Remove(frame);
-        frame.WebMessageReceived += (_, e) => Handle(e.WebMessageAsJson, e.Source, frame, json => { try { frame.PostWebMessageAsJson(json); } catch { } });
-        frame.FrameCreated += (_, e) => Follow(e.Frame);
+        frame.Destroyed += Safe.On<CoreWebView2Frame, object>("frame destroyed", (_, _) => _frames.Remove(frame));
+        frame.WebMessageReceived += Safe.On<CoreWebView2Frame, CoreWebView2WebMessageReceivedEventArgs>("frame message",
+            (_, e) => Handle(e.WebMessageAsJson, e.Source, frame, json => { try { frame.PostWebMessageAsJson(json); } catch { } }));
+        frame.FrameCreated += Safe.On<CoreWebView2Frame, CoreWebView2FrameCreatedEventArgs>("frame created", (_, e) => Follow(e.Frame));
     }
 
     /// Installs the shim and page scripts for every new document. The overlay sweeper (shield.js)
-    /// is optional, like on the Mac.
-    public async Task InstallAsync(bool overlaySweeper)
+    /// is optional, like on the Mac. `extra` are the Windows-only scripts (`PageExtras`), after them.
+    public async Task InstallAsync(bool overlaySweeper, IEnumerable<string>? extra = null)
     {
-        foreach (var id in _scriptIds) _web.RemoveScriptToExecuteOnDocumentCreated(id);
+        foreach (var id in _scriptIds)
+        {
+            try { _web.RemoveScriptToExecuteOnDocumentCreated(id); }
+            catch (Exception) { }
+        }
         _scriptIds.Clear();
         _scriptIds.Add(await _web.AddScriptToExecuteOnDocumentCreatedAsync(PageScripts.Shim));
         _scriptIds.Add(await _web.AddScriptToExecuteOnDocumentCreatedAsync(PageScripts.Media));
         _scriptIds.Add(await _web.AddScriptToExecuteOnDocumentCreatedAsync(PageScripts.MainFrameAtDocumentEnd(PageScripts.Meta)));
         if (overlaySweeper) _scriptIds.Add(await _web.AddScriptToExecuteOnDocumentCreatedAsync(PageScripts.Shield));
+        foreach (var script in extra ?? []) _scriptIds.Add(await _web.AddScriptToExecuteOnDocumentCreatedAsync(script));
     }
 
     /// Runs `script` in `frame`, or in the main frame when it's null or gone. Returns the JSON result.
@@ -156,12 +167,13 @@ public sealed class ScriptBridge
         JsonDocument document;
         try { document = JsonDocument.Parse(json); }
         catch (JsonException) { return; }
+        using var owned = document;
         var root = document.RootElement;
         if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("cineon", out _)) return;
         if (!root.TryGetProperty("h", out var handler) || handler.ValueKind != JsonValueKind.String) return;
         root.TryGetProperty("b", out var body);
         int? replyId = root.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.Number ? id.GetInt32() : null;
-        Received?.Invoke(new ScriptMessage
+        var message = new ScriptMessage
         {
             Handler = handler.GetString()!,
             Body = body.Clone(),
@@ -169,6 +181,7 @@ public sealed class ScriptBridge
             Source = source,
             ReplyId = replyId,
             Send = send,
-        });
+        };
+        Safe.Run($"page message {message.Handler}", () => Received?.Invoke(message));
     }
 }
