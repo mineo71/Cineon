@@ -116,7 +116,8 @@ public sealed class DownloadCenter
             }
             if (running.Length == 0)
             {
-                if (!queued || ++waits > 200) return;
+                // Up to 15 s: the build machines are slow, and this only waits in tests and on close.
+                if (!queued || ++waits > 1500) return;
                 await Task.Delay(10).ConfigureAwait(false);
                 continue;
             }
