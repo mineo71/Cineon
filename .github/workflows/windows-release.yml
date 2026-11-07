@@ -29,6 +29,7 @@ jobs:
       go: ${{ inputs.dry_run && 'true' || steps.marker.outputs.go }}
     steps:
       - uses: actions/checkout@v4
+        if: ${{ !inputs.dry_run }}
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
       - id: marker
