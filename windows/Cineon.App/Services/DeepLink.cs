@@ -17,7 +17,7 @@ namespace Cineon.App.Services;
 ///   cineon://downloads               Open Downloads
 ///   cineon://profile                 Open My Profile
 ///   cineon://rate                    Rate My Films
-///   cineon://debug/...               test commands, Debug builds on scratch data only
+///   cineon://debug/...               test commands, Debug builds on scratch data only (DebugCommands.cs)
 public static partial class DeepLink
 {
     public const string Scheme = "cineon";
@@ -60,7 +60,8 @@ public static partial class DeepLink
             case "debug":
                 // Test commands change and remove things. Only ever on throwaway test data.
                 if (!AppPaths.IsScratch) return;
-                // TODO(port-debug): DebugCommands.Run(url.AbsolutePath, query, app)
+                // The reply goes to debug-output.txt, as on the Mac. The tests use the local port instead.
+                DebugCommands.RunFromLink(url.AbsolutePath, query, app);
                 break;
 #endif
         }

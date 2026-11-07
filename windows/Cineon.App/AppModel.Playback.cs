@@ -21,6 +21,11 @@ public sealed partial class AppModel
 
     private readonly StayAwake _stayAwake = new();
 
+#if DEBUG_COMMANDS
+    /// Whether the screen is being kept on right now, for the test commands' `/state`.
+    internal bool IsKeepingAwakeForTests => _stayAwake.IsHolding;
+#endif
+
     /// A downloaded episode watched to its end, binned once the player moves past it.
     private long? _watchedDownloadId;
 

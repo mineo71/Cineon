@@ -18,7 +18,7 @@ concurrency:
 jobs:
   build:
     runs-on: windows-2025
-    timeout-minutes: 40
+    timeout-minutes: 130
     defaults:
       run:
         shell: pwsh
@@ -33,6 +33,7 @@ jobs:
         run: dotnet test --project Cineon.Core.Tests
 
       - name: Build the app
+        id: build
         run: dotnet build Cineon.App -c Debug -r win-x64 -v minimal
 
       - name: Launch and screenshot each screen
@@ -70,8 +71,99 @@ jobs:
           }
           if ($failed) { exit 1 }
 
+      # Uploaded before the end-to-end test starts, so a hung or failed run can't hold them back.
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: windows-artifacts
           path: artifacts/
+
+      # The end-to-end test (fixtures/e2e_windows.py, windows/notes/e2e.md): the real Debug build
+      # against the fake streaming site, driven through the app's test port. It runs whenever the
+      # app built, even if a screenshot failed.
+      - uses: actions/setup-node@v4
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-python@v5
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        with:
+          python-version: "3.12"
+
+      - name: Install ffmpeg
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        working-directory: .
+        run: |
+          for ($i = 1; $i -le 3; $i++) {
+            choco install ffmpeg -y --no-progress
+            if ($LASTEXITCODE -eq 0) { break }
+            Start-Sleep -Seconds 10
+          }
+          ffmpeg -version | Select-Object -First 1
+          ffprobe -version | Select-Object -First 1
+
+      # WebView2 (Edge) and the native player decode H.264 and AAC through Media Foundation, which
+      # Windows Server keeps as an optional feature. Best effort: the run says what it found.
+      - name: Media Foundation
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 15
+        working-directory: .
+        run: |
+          $feature = Get-WindowsFeature Server-Media-Foundation -ErrorAction SilentlyContinue
+          if ($feature -and -not $feature.Installed) {
+            Install-WindowsFeature Server-Media-Foundation | Format-List
+          } else {
+            Write-Host "Server-Media-Foundation: $(if ($feature) { $feature.InstallState } else { 'not a feature here' })"
+          }
+          Write-Host "mfplat.dll present: $(Test-Path "$env:SystemRoot\System32\mfplat.dll")"
+
+      - name: Make the test fixtures
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        working-directory: .
+        run: |
+          # The same commands as the Makefile's fixtures/film.mp4 and fixtures/hls/index.m3u8 targets.
+          ffmpeg -y -loglevel error -f lavfi -i "testsrc2=size=640x360:rate=12" -f lavfi -i "sine=frequency=330:sample_rate=22050" -t 900 `
+            -c:v libx264 -preset ultrafast -crf 34 -pix_fmt yuv420p -c:a aac -b:a 32k -movflags +faststart fixtures/film.mp4
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          ffmpeg -y -loglevel error -f lavfi -i "testsrc=size=320x180:rate=10" -t 30 `
+            -c:v libx264 -preset ultrafast -crf 36 -pix_fmt yuv420p -movflags +faststart fixtures/short.mp4
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          New-Item -ItemType Directory -Force fixtures/hls | Out-Null
+          ffmpeg -y -loglevel error -i fixtures/film.mp4 -c copy -f hls -hls_time 30 -hls_playlist_type vod `
+            -hls_segment_filename fixtures/hls/seg%03d.ts fixtures/hls/index.m3u8
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem fixtures/film.mp4, fixtures/short.mp4, fixtures/hls/index.m3u8 | Format-Table Name, Length
+
+      # Chromium resolves *.localhost by itself; the app's own requests (the rescue's site checks) go
+      # through Windows, which needs telling.
+      - name: Point the rescue test's hosts at this machine
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        working-directory: .
+        run: |
+          Add-Content -Path "$env:SystemRoot\System32\drivers\etc\hosts" -Value "`r`n127.0.0.1 flix-alive.localhost flix-dying.localhost gone.localhost nothing.localhost`r`n"
+          ipconfig /flushdns | Out-Null
+
+      - name: End-to-end test
+        id: e2e
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        timeout-minutes: 85
+        working-directory: .
+        env:
+          CINEON_E2E_DATA: ${{ runner.temp }}\cineon-e2e
+          CINEON_E2E_BROWSERS: ${{ runner.temp }}\cineon-e2e-browsers
+          CINEON_E2E_ARTIFACTS: ${{ github.workspace }}\e2e-artifacts
+          CINEON_E2E_BUDGET: "75"
+          CINEON_DEBUG_PORT: "8790"
+          PYTHONIOENCODING: utf-8
+          PYTHONUNBUFFERED: "1"
+        run: python fixtures/e2e_windows.py
+
+      # The run's log, crash.log, the app's last /state and screenshots of sections that failed.
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        with:
+          name: windows-e2e
+          path: e2e-artifacts/
+          if-no-files-found: warn

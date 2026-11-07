@@ -50,6 +50,10 @@ public sealed class App : Application, IXamlMetadataProvider
         }));
         Guard("launch", () => Activation.Handle(LaunchActivation(), Model, _args));
         Guard("test route", ShowTestRoute);
+#if DEBUG_COMMANDS
+        // The end-to-end tests' port, on scratch data with CINEON_DEBUG_PORT set (DebugCommands.cs).
+        Guard("debug commands", () => DebugCommands.Start(Model, window.DispatcherQueue));
+#endif
     }
 
     /// Test runs on scratch data can open straight on a screen (`CINEON_ROUTE=settings`, or `dark` /
