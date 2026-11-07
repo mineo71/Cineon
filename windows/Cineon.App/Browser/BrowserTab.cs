@@ -209,6 +209,8 @@ public sealed partial class BrowserTab : Observable, IDownloadTab
     private string? _captionsApplied;
     /// The last banner shown over the player, for the tests: "id|text|offer" or "…|countdown".
     public string? LastBannerForTests { get; private set; }
+    /// Why the tracker last let go of this tab's title, for tests.
+    public string? TrackClearedForTests { get; set; }
 
     private string? _lastHistoryKey;
     /// True while a navigation the person asked for is still in flight, redirects included.

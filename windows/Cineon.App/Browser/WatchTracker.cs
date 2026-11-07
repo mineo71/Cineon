@@ -108,6 +108,7 @@ public sealed class WatchTracker
         if (tab.Track is { } stale && tab.Url is { } url && stale.UrlKey != UrlKey.Make(url))
         {
             Flush(tab, e);
+            tab.TrackClearedForTests = "address changed";
             tab.Track = null;
             tab.PlayedSeconds = 0;
         }
@@ -185,6 +186,7 @@ public sealed class WatchTracker
         if (tab.Track is not null)
         {
             if (tab.Media is { } media) WriteFlush(tab, media.Position, media.Duration);
+            tab.TrackClearedForTests = "page changed";
             tab.Track = null;
         }
         tab.Media = null;
@@ -261,6 +263,7 @@ public sealed class WatchTracker
         // A background lookup may have merged this title into one already in the library.
         if (Library.CurrentId(track.TitleId) is not long currentId)
         {
+            tab.TrackClearedForTests = "title merged away";
             tab.Track = null;
             return;
         }
@@ -326,6 +329,7 @@ public sealed class WatchTracker
             else
             {
                 Library.Merge(old, titleId);
+                tab.TrackClearedForTests = "relinked";
                 tab.Track = null;
             }
         }
@@ -358,6 +362,7 @@ public sealed class WatchTracker
                 Library.DeleteSession(track.Session.Id);
             }
         }
+        tab.TrackClearedForTests = "ignored";
         tab.Track = null;
         tab.LinkedTitleId = null;
         tab.PlayedSeconds = 0;

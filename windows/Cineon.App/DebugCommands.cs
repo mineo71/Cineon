@@ -718,7 +718,7 @@ public static class DebugCommands
             ("banner", tab?.LastBannerForTests ?? "-"),
             // Windows only: what the autopilot thinks, for tests that wait on its banners.
             ("autopilot", tab is { } t
-                ? $"target={t.Autopilot.Target?.Ref.ShortLabel ?? "-"} resolving={t.Autopilot.IsResolving} resolved={t.Autopilot.IsResolved} offered={t.Autopilot.DidOffer} countdown={t.Autopilot.IsCountingDown} declined={t.Autopilot.IsDeclined} moved={t.Autopilot.DidMove} trackref={t.Track?.Ref.ShortLabel ?? "-"}"
+                ? $"target={t.Autopilot.Target?.Ref.ShortLabel ?? "-"} resolving={t.Autopilot.IsResolving} resolved={t.Autopilot.IsResolved} offered={t.Autopilot.DidOffer} countdown={t.Autopilot.IsCountingDown} declined={t.Autopilot.IsDeclined} moved={t.Autopilot.DidMove} trackref={t.Track?.Ref.ShortLabel ?? "-"} cleared={t.TrackClearedForTests ?? "-"}"
                 : "-"),
             ("rescue", tab?.Rescue?.DebugText ?? "-"),
             ("failure", tab?.Failure?.Host ?? "-"),
