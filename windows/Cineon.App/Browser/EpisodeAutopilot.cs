@@ -354,6 +354,8 @@ public sealed class EpisodeAutopilot
     private void PlayNext(BrowserTab tab, bool byHand)
     {
         if (!byHand && tab.Autopilot.IsHeldForSleep) return;
+        // A countdown that outlived a "no" (a background tab's banner, say) never moves the tab.
+        if (!byHand && tab.Autopilot.IsDeclined) return;
         if (tab.Autopilot.Target is not { } target) return;
         tab.Autopilot.DidMove = true;
         if (byHand && Settings.LearnSkips && tab.Track is { } track && tab.Media is { } media)

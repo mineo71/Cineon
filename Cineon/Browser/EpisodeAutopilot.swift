@@ -335,6 +335,8 @@ final class EpisodeAutopilot {
 
     private func playNext(tab: BrowserTab, byHand: Bool) {
         if !byHand, tab.autopilot.isHeldForSleep { return }
+        // A countdown that outlived a "no" (a background tab's banner, say) never moves the tab.
+        if !byHand, tab.autopilot.isDeclined { return }
         guard let target = tab.autopilot.target else { return }
         tab.autopilot.didMove = true
         if byHand, settings.learnSkips, let track = tab.track, let media = tab.media {
