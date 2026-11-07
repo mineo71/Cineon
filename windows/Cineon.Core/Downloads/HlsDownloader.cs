@@ -91,8 +91,12 @@ internal sealed class HlsDownloader(DownloadHttp http)
         }
 
         var options = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Parallel), CancellationToken = ct };
-        await System.Threading.Tasks.Parallel.ForEachAsync(Enumerable.Range(0, segments.Count), options, async (index, token) =>
+        // When a segment fails for good, ForEachAsync stops starting new ones and cancels its own token.
+        // The ones already on their way only stop when the person stops the download (`ct`), so what
+        // they fetch is kept and a retry asks only for what's missing.
+        await System.Threading.Tasks.Parallel.ForEachAsync(Enumerable.Range(0, segments.Count), options, async (index, _) =>
         {
+            var token = ct;
             var file = Path.Combine(staging, SegmentFile(index));
             if (File.Exists(file)) return;
             var segment = segments[index];
