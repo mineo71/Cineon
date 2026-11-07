@@ -3,10 +3,13 @@
 //   node scripts/build.mjs             both targets
 //   node scripts/build.mjs --watch     rebuild on change (Chrome only)
 //   node scripts/build.mjs --package   also zip each target into packages/
+//   node scripts/build.mjs --dev       a development build: __DEV__ is true (the debug/* hooks); --watch implies it
 //
 // The page scripts are the Mac app's own files (../Cineon/Resources/Scripts), bundled as they are
 // except for one line: where they look up `window.webkit.messageHandlers`, they get the extension's
 // shim instead (src/content/shim.ts), the same trick the Windows port uses for WebView2.
+// `import media from "@page/media.js"` gives the source as a string; `import run from
+// "@page-run/media.js"` gives it wrapped in a function, so a content script runs it without eval.
 import { build, context } from "esbuild";
 import { cp, mkdir, readFile, rm, writeFile, readdir, stat } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
@@ -19,6 +22,7 @@ const repo = path.resolve(root, "..");
 const pkg = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
 const args = new Set(process.argv.slice(2));
 const targets = args.has("--watch") ? ["chrome"] : ["chrome", "firefox"];
+const dev = args.has("--dev") || args.has("--watch");
 
 const MacHandlers = "window.webkit && window.webkit.messageHandlers";
 const ExtensionHandlers = "globalThis.__cineonHandlers";
@@ -27,13 +31,20 @@ const ExtensionHandlers = "globalThis.__cineonHandlers";
 const pageScripts = {
   name: "page-scripts",
   setup(b) {
-    b.onResolve({ filter: /^@page\// }, (a) => ({
-      path: path.join(repo, "Cineon/Resources/Scripts", a.path.slice("@page/".length)),
-      namespace: "page-script",
-    }));
+    b.onResolve({ filter: /^@page(-run)?\// }, (a) => {
+      const run = a.path.startsWith("@page-run/");
+      return {
+        path: path.join(repo, "Cineon/Resources/Scripts", a.path.slice(run ? "@page-run/".length : "@page/".length)),
+        namespace: run ? "page-run" : "page-script",
+      };
+    });
     b.onLoad({ filter: /.*/, namespace: "page-script" }, async (a) => {
       const source = (await readFile(a.path, "utf8")).replaceAll(MacHandlers, ExtensionHandlers);
       return { contents: `export default ${JSON.stringify(source)};`, loader: "js" };
+    });
+    b.onLoad({ filter: /.*/, namespace: "page-run" }, async (a) => {
+      const source = (await readFile(a.path, "utf8")).replaceAll(MacHandlers, ExtensionHandlers);
+      return { contents: `export default function run() {\n${source}\n}\n`, loader: "js" };
     });
   },
 };
@@ -60,7 +71,8 @@ function manifest(target) {
     background: firefox ? { scripts: ["background.js"], type: "module" } : { service_worker: "background.js", type: "module" },
     permissions: [
       "storage", "unlimitedStorage", "tabs", "scripting", "webNavigation", "webRequest", "declarativeNetRequest",
-      "declarativeNetRequestFeedback", "downloads", "notifications", "alarms", "contextMenus", "history",
+      "declarativeNetRequestFeedback", "downloads", "downloads.open", "notifications", "alarms", "contextMenus", "history",
+      "clipboardWrite",
       ...(firefox ? [] : ["offscreen", "power", "sidePanel"]),
     ],
     host_permissions: ["<all_urls>"],
@@ -129,7 +141,7 @@ async function buildTarget(target, watch) {
     minify: !watch,
     legalComments: "none",
     plugins: [pageScripts],
-    define: { __TARGET__: JSON.stringify(target), __VERSION__: JSON.stringify(pkg.version) },
+    define: { __TARGET__: JSON.stringify(target), __VERSION__: JSON.stringify(pkg.version), __DEV__: JSON.stringify(dev) },
     jsx: "automatic",
     jsxImportSource: "preact",
     loader: { ".css": "text" },
