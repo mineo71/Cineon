@@ -716,6 +716,10 @@ public static class DebugCommands
             ("search", X("search")),
             ("toast", app.Toasts.Current?.Message ?? "-"),
             ("banner", tab?.LastBannerForTests ?? "-"),
+            // Windows only: what the autopilot thinks, for tests that wait on its banners.
+            ("autopilot", tab is { } t
+                ? $"target={t.Autopilot.Target?.Ref.ShortLabel ?? "-"} resolving={t.Autopilot.IsResolving} resolved={t.Autopilot.IsResolved} offered={t.Autopilot.DidOffer} countdown={t.Autopilot.IsCountingDown} declined={t.Autopilot.IsDeclined} moved={t.Autopilot.DidMove} trackref={t.Track?.Ref.ShortLabel ?? "-"}"
+                : "-"),
             ("rescue", tab?.Rescue?.DebugText ?? "-"),
             ("failure", tab?.Failure?.Host ?? "-"),
             ("frames", app.Library.FramesBySession.Values.Sum(list => list.Count).ToString(CultureInfo.InvariantCulture)),

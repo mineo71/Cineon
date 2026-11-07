@@ -368,7 +368,7 @@ RENAMES = [
 ]
 
 STATE_KEYS = ["profile", "route", "url", "parsed", "media", "track", "blocked", "banner", "rescue", "failure", "toast",
-              "tabs", "tablist", "search", "windowVisible", "appActive", "awake", "ambient", "hibernated", "ready", "best"]
+              "tabs", "tablist", "search", "windowVisible", "appActive", "awake", "autopilot", "ambient", "hibernated", "ready", "best"]
 
 
 def record(name, ok, detail=""):
