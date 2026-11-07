@@ -297,4 +297,326 @@ public static class Ui
     public static Thickness Add(Thickness a, Thickness b) => new(a.Left + b.Left, a.Top + b.Top, a.Right + b.Right, a.Bottom + b.Bottom);
 
     public static SolidColorBrush B(Color color) => new(color);
+
+    /// A box of a fixed shape, `heightOverWidth`, filling the width it's offered: SwiftUI's
+    /// `.aspectRatio(_, contentMode: .fit)`. Its height is known while it's measured, so lists can lay
+    /// it out in one pass.
+    public static AspectRatioPanel AspectRatio(UIElement child, double heightOverWidth) => new(heightOverWidth) { Children = { child } };
+
+    /// Takes an element out of its parent, so it can join another layout. An element has one parent,
+    /// and adding it to a second one throws. False when it has a parent this can't take it from
+    /// (a template's ContentPresenter, a Popup, a repeater), so the caller shouldn't add it elsewhere.
+    public static bool Detach(UIElement element)
+    {
+        var parent = (element as FrameworkElement)?.Parent ?? VisualTreeHelper.GetParent(element);
+        switch (parent)
+        {
+            case null: return true;
+            case Panel panel when panel.Children.Contains(element): panel.Children.Remove(element); return true;
+            case Border border when ReferenceEquals(border.Child, element): border.Child = null; return true;
+            case Viewbox box when ReferenceEquals(box.Child, element): box.Child = null; return true;
+            case ContentControl control when ReferenceEquals(control.Content, element): control.Content = null; return true;
+            case UserControl user when ReferenceEquals(user.Content, element): user.Content = null; return true;
+            default: return false;
+        }
+    }
+
+    /// SwiftUI's `minimumScaleFactor`: the text gets smaller, down to `minimumScale`, rather than be
+    /// cut. The size is worked out in one go whenever the width changes, by measuring copies of the
+    /// text, so it never shrinks on screen step by step. It stretches across its container, so its
+    /// width doesn't follow its own size.
+    public static TextBlock ShrinkToFit(this TextBlock text, double minimumScale)
+    {
+        var full = text.FontSize;
+        var floor = full * minimumScale;
+        var width = -1.0;
+        text.HorizontalAlignment = HorizontalAlignment.Stretch;
+        text.SizeChanged += (_, e) =>
+        {
+            if (Math.Abs(e.NewSize.Width - width) < 0.5) return;
+            width = e.NewSize.Width;
+            var size = FittingSize(text, width, full, floor);
+            if (Math.Abs(size - text.FontSize) > 0.01) text.FontSize = size;
+        };
+        return text;
+    }
+
+    private static double FittingSize(TextBlock text, double width, double full, double floor)
+    {
+        if (width <= 0 || string.IsNullOrEmpty(text.Text)) return full;
+        TextBlock Copy(string content, double size, bool wrap) => new()
+        {
+            Text = content,
+            FontFamily = text.FontFamily,
+            FontWeight = text.FontWeight,
+            FontSize = size,
+            LineHeight = text.LineHeight,
+            TextWrapping = wrap ? TextWrapping.WrapWholeWords : TextWrapping.NoWrap,
+            IsTextScaleFactorEnabled = false,
+        };
+        var words = text.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var wraps = text.TextWrapping != TextWrapping.NoWrap;
+        var infinite = new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity);
+        bool Fits(double size)
+        {
+            if (!wraps)
+            {
+                var line = Copy(text.Text, size, wrap: false);
+                line.Measure(infinite);
+                return line.DesiredSize.Width <= width + 0.5;
+            }
+            // A word wider than the line can't wrap, so it would be cut.
+            foreach (var word in words)
+            {
+                var piece = Copy(word, size, wrap: false);
+                piece.Measure(infinite);
+                if (piece.DesiredSize.Width > width + 0.5) return false;
+            }
+            if (text.MaxLines <= 0) return true;
+            var block = Copy(text.Text, size, wrap: true);
+            block.Measure(new Windows.Foundation.Size(width, double.PositiveInfinity));
+            var one = Copy("Ag", size, wrap: false);
+            one.Measure(infinite);
+            return block.DesiredSize.Height <= one.DesiredSize.Height * text.MaxLines + 0.5;
+        }
+        if (Fits(full)) return full;
+        if (!Fits(floor)) return floor;
+        double low = floor, high = full;
+        for (var i = 0; i < 8; i++)
+        {
+            var middle = (low + high) / 2;
+            if (Fits(middle)) low = middle; else high = middle;
+        }
+        return low;
+    }
+}
+
+/// A box of a fixed shape that fills the width it's offered, or the height when only that is known.
+/// Children are laid out over the whole box. See `Ui.AspectRatio`.
+public sealed class AspectRatioPanel : Panel
+{
+    public AspectRatioPanel(double heightOverWidth) { Ratio = heightOverWidth; }
+
+    /// Height over width: 1.5 for a poster, 9/16 for a frame.
+    public double Ratio { get; }
+
+    private Windows.Foundation.Size Fit(Windows.Foundation.Size available)
+    {
+        var width = available.Width;
+        if (double.IsInfinity(width) || double.IsNaN(width)) width = double.IsInfinity(available.Height) ? 0 : available.Height / Ratio;
+        var height = width * Ratio;
+        if (!double.IsInfinity(available.Height) && height > available.Height + 0.01)
+        {
+            height = available.Height;
+            width = height / Ratio;
+        }
+        return new(width, height);
+    }
+
+    protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size availableSize)
+    {
+        var size = Fit(availableSize);
+        foreach (var child in Children) child.Measure(size);
+        return size;
+    }
+
+    protected override Windows.Foundation.Size ArrangeOverride(Windows.Foundation.Size finalSize)
+    {
+        var size = Fit(finalSize);
+        var rect = new Windows.Foundation.Rect((finalSize.Width - size.Width) / 2, (finalSize.Height - size.Height) / 2, size.Width, size.Height);
+        foreach (var child in Children) child.Arrange(rect);
+        return finalSize;
+    }
+}
+
+/// SwiftUI's `ViewThatFits(in: .horizontal)`: shows the first child whose ideal width fits, the last
+/// one when none does. The others stay in the tree, laid out at no size, hidden and switched off.
+public sealed class ViewThatFits : Panel
+{
+    private int _chosen;
+
+    /// Which child is on screen, after the last layout.
+    public int Chosen => _chosen;
+
+    protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size availableSize)
+    {
+        if (Children.Count == 0) return new(0, 0);
+        _chosen = Children.Count - 1;
+        for (var i = 0; i < Children.Count; i++)
+        {
+            Children[i].Measure(new Windows.Foundation.Size(double.PositiveInfinity, availableSize.Height));
+            if (Children[i].DesiredSize.Width <= availableSize.Width + 0.5)
+            {
+                _chosen = i;
+                break;
+            }
+        }
+        var chosen = Children[_chosen];
+        chosen.Measure(availableSize);
+        var width = double.IsInfinity(availableSize.Width) ? chosen.DesiredSize.Width : availableSize.Width;
+        return new(width, chosen.DesiredSize.Height);
+    }
+
+    protected override Windows.Foundation.Size ArrangeOverride(Windows.Foundation.Size finalSize)
+    {
+        for (var i = 0; i < Children.Count; i++)
+        {
+            var child = Children[i];
+            var shown = i == _chosen;
+            child.Arrange(shown ? new Windows.Foundation.Rect(0, 0, finalSize.Width, finalSize.Height) : new Windows.Foundation.Rect(0, 0, 0, 0));
+            child.Opacity = shown ? 1 : 0;
+            child.IsHitTestVisible = shown;
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAccessibilityView(child,
+                shown ? Microsoft.UI.Xaml.Automation.Peers.AccessibilityView.Content : Microsoft.UI.Xaml.Automation.Peers.AccessibilityView.Raw);
+            if (child is Control control) control.IsEnabled = shown;
+        }
+        return finalSize;
+    }
+}
+
+/// Two groups on one line, the first at the start and the second at the end, while they fit with
+/// `minGap` between them; otherwise the second goes on its own line under the first. Like an HStack
+/// with a Spacer inside a ViewThatFits, for groups that must stay the same elements (a text box keeps
+/// its focus).
+public sealed class FitRow : Panel
+{
+    private bool _oneLine = true;
+
+    public double MinGap { get; set; } = 20;
+    public double LineSpacing { get; set; } = 10;
+
+    protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size availableSize)
+    {
+        if (Children.Count != 2) return new(0, 0);
+        var ideal = new Windows.Foundation.Size(double.PositiveInfinity, availableSize.Height);
+        Children[0].Measure(ideal);
+        Children[1].Measure(ideal);
+        var a = Children[0].DesiredSize;
+        var b = Children[1].DesiredSize;
+        _oneLine = a.Width + MinGap + b.Width <= availableSize.Width + 0.5;
+        var width = double.IsInfinity(availableSize.Width) ? a.Width + MinGap + b.Width : availableSize.Width;
+        if (_oneLine) return new(width, Math.Max(a.Height, b.Height));
+        var line = new Windows.Foundation.Size(availableSize.Width, double.PositiveInfinity);
+        Children[0].Measure(line);
+        Children[1].Measure(line);
+        return new(width, Children[0].DesiredSize.Height + LineSpacing + Children[1].DesiredSize.Height);
+    }
+
+    protected override Windows.Foundation.Size ArrangeOverride(Windows.Foundation.Size finalSize)
+    {
+        if (Children.Count != 2) return finalSize;
+        var a = Children[0].DesiredSize;
+        var b = Children[1].DesiredSize;
+        if (_oneLine)
+        {
+            var height = Math.Max(a.Height, b.Height);
+            Children[0].Arrange(new(0, (height - a.Height) / 2, a.Width, a.Height));
+            Children[1].Arrange(new(Math.Max(a.Width + MinGap, finalSize.Width - b.Width), (height - b.Height) / 2, b.Width, b.Height));
+        }
+        else
+        {
+            Children[0].Arrange(new(0, 0, Math.Min(a.Width, finalSize.Width), a.Height));
+            Children[1].Arrange(new(0, a.Height + LineSpacing, Math.Min(b.Width, finalSize.Width), b.Height));
+        }
+        return finalSize;
+    }
+}
+
+/// Animations, the way the Mac's views animate. Movement is skipped when "Animation effects" is off
+/// in Windows settings, as the Mac skips it under Reduce Motion.
+public static class Motion
+{
+    private static Windows.UI.ViewManagement.UISettings? _settings;
+
+    /// Windows' "Animation effects" setting.
+    public static bool Enabled
+    {
+        get
+        {
+            try { return (_settings ??= new Windows.UI.ViewManagement.UISettings()).AnimationsEnabled; }
+            catch (Exception) { return true; }
+        }
+    }
+
+    /// SwiftUI's spring response is the period of the undamped spring. Composition's Period is
+    /// the time for one radian of it.
+    public static TimeSpan Period(double response) => TimeSpan.FromSeconds(response / (2 * Math.PI));
+
+    /// SwiftUI's `.easeInOut` and `.easeOut` curves.
+    public static Microsoft.UI.Composition.CompositionEasingFunction EaseInOut(Microsoft.UI.Composition.Compositor compositor) =>
+        compositor.CreateCubicBezierEasingFunction(new(0.42f, 0), new(0.58f, 1));
+
+    public static Microsoft.UI.Composition.CompositionEasingFunction EaseOut(Microsoft.UI.Composition.Compositor compositor) =>
+        compositor.CreateCubicBezierEasingFunction(new(0, 0), new(0.58f, 1));
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<FrameworkElement, object> Centred = new();
+
+    /// Scales around the element's centre with a spring, like `.scaleEffect` under `.spring(response:dampingFraction:)`.
+    /// `animated: false` sets it at once.
+    public static void Scale(FrameworkElement element, double scale, double response = 0.3, double damping = 0.75, bool animated = true)
+    {
+        var visual = Microsoft.UI.Xaml.Hosting.ElementCompositionPreview.GetElementVisual(element);
+        if (!Centred.TryGetValue(element, out _))
+        {
+            Centred.Add(element, true);
+            element.SizeChanged += (_, e) => visual.CenterPoint = new System.Numerics.Vector3((float)(e.NewSize.Width / 2), (float)(e.NewSize.Height / 2), 0);
+        }
+        visual.CenterPoint = new System.Numerics.Vector3((float)(element.ActualWidth / 2), (float)(element.ActualHeight / 2), 0);
+        var target = new System.Numerics.Vector3((float)scale, (float)scale, 1);
+        if (!animated || !Enabled)
+        {
+            visual.StopAnimation("Scale");
+            visual.Scale = target;
+            return;
+        }
+        var spring = visual.Compositor.CreateSpringVector3Animation();
+        spring.FinalValue = target;
+        spring.DampingRatio = (float)damping;
+        spring.Period = Period(response);
+        visual.StartAnimation("Scale", spring);
+    }
+
+    /// Shows an element that appears on hover (`if isHovered { ... }.transition(.opacity)`): it takes
+    /// its place and fades in, or fades out and then gives its place back.
+    public static void Reveal(UIElement element, bool shown, double seconds = 0.12)
+    {
+        if (shown)
+        {
+            element.Visibility = Visibility.Visible;
+            Fade(element, 1, seconds);
+            return;
+        }
+        Fade(element, 0, seconds);
+        if (seconds <= 0 || element.DispatcherQueue is not { } queue)
+        {
+            element.Visibility = Visibility.Collapsed;
+            return;
+        }
+        var timer = queue.CreateTimer();
+        timer.Interval = TimeSpan.FromSeconds(seconds);
+        timer.IsRepeating = false;
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            // Shown again in the meantime.
+            if (element.IsHitTestVisible) return;
+            element.Visibility = Visibility.Collapsed;
+        };
+        timer.Start();
+    }
+
+    /// Fades an element's own opacity, like a `.transition(.opacity)` under `.easeOut(duration:)`. A
+    /// faded-out element stops taking clicks. Fades aren't movement, so they run whatever the setting.
+    public static void Fade(UIElement element, double opacity, double seconds = 0.12)
+    {
+        element.IsHitTestVisible = opacity > 0;
+        if (seconds <= 0)
+        {
+            element.OpacityTransition = null;
+            element.Opacity = opacity;
+            return;
+        }
+        element.OpacityTransition ??= new ScalarTransition { Duration = TimeSpan.FromSeconds(seconds) };
+        element.Opacity = opacity;
+    }
 }

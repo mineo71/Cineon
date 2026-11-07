@@ -14,7 +14,7 @@ namespace Cineon.App.UI;
 public static class Overlays
 {
     /// The title detail card for `app.DetailTitleId` (TitleDetailView).
-    public static UIElement? TitleDetail(AppModel app, Title title) => null;
+    public static UIElement? TitleDetail(AppModel app, Title title) => new TitleDetailCard(app, title);
 
     /// One of the sheets (Sheets.swift's SheetHost: AddSiteSheet, EditSiteSheet, AddTitleSheet,
     /// RelinkSheet, ImportSheet, NewChallengeSheet).
@@ -39,7 +39,7 @@ public static class Overlays
 
     /// The launch animation (Splash.swift's SplashView). It sets `app.SplashVisible = false` when it's
     /// done; with none registered the splash is skipped.
-    public static UIElement? Splash(AppModel app) => null;
+    public static UIElement? Splash(AppModel app) => new SplashView(app);
 }
 
 /// Hosts the overlays over the whole window, in the Mac's order (RootView's Overlays): title card,

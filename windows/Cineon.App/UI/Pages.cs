@@ -14,6 +14,10 @@ public static class Pages
         Route.Settings => new SettingsPage(app),
         Route.Downloads => new DownloadsPage(app),
         Route.Player => new LocalPlayerView(app),
+        Route.Home => new HomePage(app),
+        Route.Library => new LibraryPage(app),
+        Route.Timeline => new TimelinePage(app),
+        Route.Rate => new RatePage(app),
         _ => Placeholder(app.Route.ToString()),
     };
 
