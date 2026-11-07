@@ -3,6 +3,18 @@
 Each release's section here becomes its notes on GitHub and in Cineon's update window.
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-11-07
+
+### Added
+- **Cineon for Windows**: the same app on Windows 10 and 11, x64 and ARM, built natively with WinUI 3
+  and WebView2. Same screens and features, and the same data formats, so a profile folder copied
+  from a Mac opens on Windows. Install with `Cineon.App-win-x64-Setup.exe` (or `-win-arm64-`); it
+  updates itself from these releases, like the Mac app.
+
+### Fixed
+- An episode no longer rolls on to the next one after you've said no, when an old countdown was
+  still running in the page.
+
 ## [1.0.1] - 2026-11-06
 
 ### Fixed

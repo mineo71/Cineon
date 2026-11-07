@@ -1,0 +1,3 @@
+This file turns on the Windows build for tagged releases (.github/workflows/windows-release.yml).
+With it, each `make release` tag also gets the Windows installers, portable zips and Velopack's
+update feed. Delete it to ship Mac-only releases.
