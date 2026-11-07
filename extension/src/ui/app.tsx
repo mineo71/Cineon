@@ -1,7 +1,9 @@
+// The Cineon page (app.html), and the side panel / Firefox sidebar (app.html#panel).
 import { render } from "preact";
+import { Root } from "./Root";
+import { applyRememberedTheme } from "./lib/session";
 
-function App() {
-  return <main class="placeholder"><h1>Cineon</h1><p>The screens are being ported.</p></main>;
-}
-
-render(<App />, document.getElementById("root")!);
+const mode = location.hash.startsWith("#panel") ? "panel" : "app";
+document.documentElement.dataset.mode = mode;
+applyRememberedTheme();
+render(<Root mode={mode} />, document.getElementById("root")!);

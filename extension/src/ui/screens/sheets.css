@@ -1,0 +1,16 @@
+/* Sheets.swift: SheetFrame, MetadataResults and the sheets' rows. */
+.sheet { display: flex; flex-direction: column; gap: 16px; padding: 24px; border-radius: 18px; max-width: calc(100vw - 40px); max-height: calc(100vh - 60px); overflow: auto; scrollbar-width: none; }
+.sheet::-webkit-scrollbar { display: none; }
+.sheet-heading { margin: 0; font-size: 24px; color: var(--ink); min-width: 0; }
+.sheet-text { margin: 0; font-size: 13px; color: var(--ink2); }
+
+.no-matches { margin: 0; min-height: 60px; display: flex; align-items: center; justify-content: center; font-size: 12.5px; color: var(--ink3); text-align: center; }
+.hits { display: flex; gap: 12px; align-items: flex-start; }
+.hit { display: flex; flex-direction: column; gap: 5px; width: 94px; flex: none; text-align: left; }
+.hit-name { font-size: 11.5px; font-weight: 500; color: var(--ink); width: 94px; }
+.hit-sub { font-size: 11px; color: var(--ink3); width: 94px; }
+
+.challenge-list { height: 320px; display: flex; flex-direction: column; gap: 2px; }
+.challenge-row { width: 100%; gap: 12px; }
+.challenge-empty { margin: 0; padding: 20px 0; font-size: 12.5px; color: var(--ink3); }
+.relink-row { width: 100%; gap: 10px; }

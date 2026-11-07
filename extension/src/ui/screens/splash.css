@@ -1,0 +1,15 @@
+/* Splash.swift: the logo at 170 pt, revealed by an angular wipe starting at −38° (SwiftUI's angle,
+   from the right going clockwise: 52° in CSS's conic terms, from the top). */
+@property --sweep { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+.splash { position: fixed; inset: 0; z-index: 99; background: var(--canvas); display: flex; align-items: center; justify-content: center; pointer-events: none; transition: opacity 220ms ease-out; }
+.splash.fading { opacity: 0; }
+.splash-logo {
+  width: 170px; height: 170px; background: var(--ink);
+  --sweep: 0%;
+  -webkit-mask: url("logo-mark.png") center / contain no-repeat, conic-gradient(from 52deg, #000 0%, #000 var(--sweep), transparent calc(var(--sweep) + 4%));
+  -webkit-mask-composite: source-in;
+  mask: url("logo-mark.png") center / contain no-repeat, conic-gradient(from 52deg, #000 0%, #000 var(--sweep), transparent calc(var(--sweep) + 4%));
+  mask-composite: intersect;
+  animation: splash-sweep 420ms ease-in-out forwards;
+}
+@keyframes splash-sweep { from { --sweep: 0%; } to { --sweep: 100%; } }

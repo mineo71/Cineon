@@ -1,0 +1,29 @@
+/* RateModeView.swift */
+.rate-mode { position: absolute; inset: 0; overflow: hidden; background: var(--canvas); display: flex; align-items: stretch; justify-content: center; }
+.rate-backdrop { position: absolute; inset: 0; pointer-events: none; }
+.rate-backdrop-image { position: absolute; inset: -80px; filter: blur(60px) saturate(1.3); opacity: .42; transition: opacity 500ms ease-in-out; }
+.rate-backdrop-shade { position: absolute; inset: 0; background: linear-gradient(to bottom, color-mix(in srgb, var(--canvas) 20%, transparent), color-mix(in srgb, var(--canvas) 92%, transparent)); }
+
+.rate-card { position: relative; flex: 1 1 auto; display: flex; flex-direction: column; padding: 30px 0; min-width: 0; }
+.rate-card.forward { animation: rate-in-forward 420ms cubic-bezier(.2,.95,.3,1) both; }
+.rate-card.back { animation: rate-in-back 420ms cubic-bezier(.2,.95,.3,1) both; }
+@keyframes rate-in-forward { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: none; } }
+@keyframes rate-in-back { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: none; } }
+
+.rate-header { position: relative; display: flex; align-items: baseline; padding: 0 40px; }
+.rate-count { font-size: 13px; color: var(--ink3); margin-left: 6px; }
+.rate-include { gap: 8px; font-size: 12px; color: var(--ink2); align-self: center; }
+.rate-header .btn-outline { align-self: center; }
+.rate-progress { position: absolute; left: 40px; right: 40px; bottom: -14px; height: 2px; border-radius: 999px; background: var(--raised2); overflow: hidden; }
+.rate-progress > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--gold); transition: width 420ms cubic-bezier(.2,.95,.3,1); }
+
+.spacer-v { flex: 1 1 0; min-height: 20px; }
+.rate-body { gap: 46px; padding: 0 60px; justify-content: center; align-items: center; }
+.rate-poster { flex: none; filter: drop-shadow(0 16px 30px rgba(0,0,0,.55)); }
+.rate-text { gap: 14px; max-width: 560px; min-width: 0; flex: 0 1 560px; }
+.rate-name { font-size: clamp(25px, 3.4vw, 42px); line-height: 1.1; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.rate-detail { font-size: 14px; color: var(--ink2); white-space: pre; }
+.rate-hint { font-size: 12px; color: var(--ink3); }
+.rate-upcoming { gap: 10px; height: 70px; justify-content: center; align-items: center; flex: none; }
+
+.rate-finished { position: relative; align-self: center; align-items: center; gap: 16px; text-align: center; }
