@@ -690,7 +690,7 @@ export class Browser {
     if (documentId != null && documentId === tab.documentId) return;
     const wasTrusted = tab.trustedNavigation;
     const previousUrl = tab.url;
-    const wasShielded = tab.track != null || tab.media != null || this.ctx.library.siteForHost(hostOf(previousUrl)) != null;
+    const wasShielded = this.isShielded(tab);
     tab.documentId = documentId;
     tab.trustedNavigation = false;
     tab.failure = null;
@@ -774,9 +774,18 @@ export class Browser {
 
   // MARK: Shields
 
-  /** Pages where the pop-up and redirect shields apply: the person's sites and pages with a film. */
+  /**
+   * Pages where the pop-up and redirect shields apply. The Mac app is a browser for films only, so it
+   * shields everything; the browser around the extension is the person's everything, where a sign-in
+   * window or a payment redirect must keep working. So: the person's sites, pages with a long video,
+   * and pages that say they're a film or an episode (what streaming sites with pop-unders are).
+   */
   isShielded(tab: TabState): boolean {
-    return tab.media != null || tab.track != null || this.ctx.library.siteForHost(hostOf(tab.url)) != null;
+    if (tab.media != null || tab.track != null || tab.mediaFrame != null) return true;
+    if (this.ctx.library.siteForHost(hostOf(tab.url)) != null) return true;
+    const parsed = tab.parsed;
+    if (!parsed || parsed.confidence < 0.5) return false;
+    return parsed.year != null || EpisodeRef.isEpisode(parsed.ref) || parsed.kindHint !== "unknown" || /video/i.test(tab.pageMeta?.ogType ?? "");
   }
 
   /**

@@ -65,11 +65,14 @@ export class Runtime {
 
   /** The session, opening it if needed. Every event that needs the library waits on this. */
   ready(): Promise<ProfileSession> {
+    // A session being opened (or a switch to another person) wins over the one still open.
+    if (this.opening) return this.opening;
     if (this.session && !this.session.isClosed) return Promise.resolve(this.session);
-    this.opening ??= this.open(null).finally(() => {
-      this.opening = null;
+    const opening = this.open(null).finally(() => {
+      if (this.opening === opening) this.opening = null;
     });
-    return this.opening;
+    this.opening = opening;
+    return opening;
   }
 
   private async open(profileId: string | null): Promise<ProfileSession> {
@@ -112,21 +115,32 @@ export class Runtime {
     }
   }
 
-  /** The person changed: close this session (saving everything), open theirs. */
-  async switchProfile(profileId: string): Promise<void> {
-    const old = this.session ?? (this.opening ? await this.opening.catch(() => null) : null);
-    if (old && old.profile.id === profileId && !old.isClosed) return;
-    this.session = null;
-    if (old) await old.close();
-    for (const tab of this.registry.all()) {
-      tab.linkedTitleId = null;
-      tab.track = null;
-    }
-    this.opening = this.open(profileId).finally(() => {
-      this.opening = null;
+  /**
+   * The person changed: close this session (saving everything), open theirs. Switches run one after
+   * another (a page sends both the `profile` signal and the request), and `ready()` waits for them.
+   */
+  switchProfile(profileId: string): Promise<void> {
+    const before = this.opening;
+    const task = this.switching.then(async () => {
+      const old = this.session ?? (before ? await before.catch(() => null) : null);
+      if (old && old.profile.id === profileId && !old.isClosed) return old;
+      this.session = null;
+      if (old) await old.close();
+      for (const tab of this.registry.all()) {
+        tab.linkedTitleId = null;
+        tab.track = null;
+      }
+      return this.open(profileId);
     });
-    await this.opening;
+    this.switching = task.catch(() => undefined);
+    const opening = task.finally(() => {
+      if (this.opening === opening) this.opening = null;
+    });
+    this.opening = opening;
+    return opening.then(() => undefined);
   }
+
+  private switching: Promise<unknown> = Promise.resolve();
 
   // MARK: Keeping the worker running
 

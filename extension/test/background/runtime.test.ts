@@ -1,4 +1,4 @@
-import { UrlKey } from "../../src/core/data";
+import { Database, UrlKey } from "../../src/core/data";
 import { listenForUiRequests, type UiRequestType, UI_MESSAGE } from "../../src/shared/messages";
 import { Runtime } from "../../src/background/runtime";
 import { TABS_STORAGE_KEY } from "../../src/background/tabs";
@@ -91,6 +91,14 @@ describe("shields", () => {
     expect(h.tabs.removed).toEqual([]);
   });
 
+  test("a film's page shields its first click even before the video plays", async () => {
+    const h = await makeHarness();
+    await openTab(h, 1, "http://127.0.0.1:8765/watch/dune-part-two-2024");
+    await fromPage(h, 1, "cineonMeta", { url: "http://127.0.0.1:8765/watch/dune-part-two-2024", title: "Watch Dune: Part Two (2024) Full Movie Online Free HD | FlixDemo", ogType: "video.movie", ld: [] });
+    await h.runtime.createdNavigationTarget({ sourceTabId: 1, tabId: 54, url: "http://ads.example.test/popunder" });
+    expect(h.tabs.removed).toContain(54);
+  });
+
   test("pages Cineon has no stake in keep their pop-ups (sign-in windows and the like)", async () => {
     const h = await makeHarness();
     await openTab(h, 1, "https://mail.example/inbox");
@@ -110,6 +118,32 @@ describe("shields", () => {
     const tab = h.runtime.current!.browser.tab(1)!;
     expect(tab.blocked.redirects).toBe(1);
     expect(tab.lastBannerForTests).toBe("toast|Blocked redirect to ads.example|offer");
+  });
+});
+
+describe("profiles", () => {
+  test("a page's signal and request to switch person open one session for them", async () => {
+    const h = await makeHarness({ minimumSecondsToTrack: 4 });
+    const first = h.runtime.current!;
+    await openTab(h, 1, FILM);
+    await fromPage(h, 1, "cineonMeta", filmMeta);
+    await play(h, 1, 100, 8, 9000);
+    const guest = await first.profiles.add("Guest");
+    await first.profiles.markUsed(guest.id);
+    first.heard({ type: "profile", profileId: guest.id, origin: "page" });
+    const request = h.runtime.switchProfile(guest.id);
+    const during = h.runtime.ready();
+    await request;
+    const session = await during;
+    expect(session.profile.id).toBe(guest.id);
+    expect(h.runtime.current).toBe(session);
+    expect(first.isClosed).toBe(true);
+    // The first person's progress was saved on the way out, and the tab carries no one's track.
+    const firstDb = await Database.open(Database.nameFor(first.profile.id));
+    expect((await firstDb.progress(UrlKey.make(FILM)))?.position).toBe(108);
+    firstDb.close();
+    expect(h.runtime.registry.get(1)!.track).toBeNull();
+    expect(session.library.titles.size).toBe(0);
   });
 });
 
