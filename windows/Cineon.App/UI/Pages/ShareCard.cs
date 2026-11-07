@@ -71,12 +71,18 @@ internal static class ShareCard
 
     private static Color White(double opacity) => Palette.Grey(1, opacity);
 
+    /// Jost from the app's own font file, by its file address: Win2D can't follow ms-appx in an app
+    /// that isn't packaged. If Win2D turns that down too, the card is set in Segoe instead.
+    private static readonly string JostFile =
+        new Uri(Path.Combine(AppContext.BaseDirectory, "Assets", "Fonts", "Jost.ttf")).AbsoluteUri + "#Jost";
+    private static bool _jostRefused;
+
     private static CanvasTextLayout Text(ICanvasResourceCreator device, string text, string family, float size, Windows.UI.Text.FontWeight weight,
         Color color, float maxWidth = 10000, CanvasHorizontalAlignment align = CanvasHorizontalAlignment.Left)
     {
         var format = new CanvasTextFormat
         {
-            FontFamily = family,
+            FontFamily = family == Jost ? (_jostRefused ? "Segoe UI Variable Display" : JostFile) : family,
             FontSize = size,
             FontWeight = weight,
             WordWrapping = CanvasWordWrapping.NoWrap,
@@ -84,7 +90,16 @@ internal static class ShareCard
         };
         // Win2D rejects a width that isn't positive and finite.
         if (!float.IsFinite(maxWidth) || maxWidth < 1) maxWidth = maxWidth < 1 ? 1 : 10000;
-        var layout = new CanvasTextLayout(device, text, format, maxWidth, 10000) { Options = CanvasDrawTextOptions.EnableColorFont };
+        CanvasTextLayout layout;
+        try
+        {
+            layout = new CanvasTextLayout(device, text, format, maxWidth, 10000) { Options = CanvasDrawTextOptions.EnableColorFont };
+        }
+        catch (ArgumentException) when (family == Jost && !_jostRefused)
+        {
+            _jostRefused = true;
+            return Text(device, text, family, size, weight, color, maxWidth, align);
+        }
         layout.SetColor(0, text.Length, color);
         return layout;
     }
