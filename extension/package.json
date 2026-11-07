@@ -12,9 +12,11 @@
     "package": "node scripts/build.mjs --package"
   },
   "devDependencies": {
+    "@testing-library/preact": "^3.2.4",
     "@types/chrome": "0.3.7",
     "esbuild": "0.28.2",
     "fake-indexeddb": "6.2.7",
+    "jsdom": "^25.0.1",
     "typescript": "7.0.2",
     "vitest": "^3.2.7"
   },

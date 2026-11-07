@@ -1,0 +1,22 @@
+/* HomeView.swift */
+.home { position: absolute; inset: 0; background: var(--card); display: flex; flex-direction: column; gap: 34px; }
+.home-shelves { display: flex; flex-direction: column; gap: 34px; padding: 0 32px 40px; }
+
+.home-hero { position: relative; height: 440px; flex: none; }
+.home-hero .hero-image { position: absolute; inset: 0; }
+.home-hero .hero-blank { position: absolute; inset: 0; background: var(--raised); }
+.home-hero .hero-shade { position: absolute; inset: 0; background: linear-gradient(to bottom, color-mix(in srgb, var(--card) 0%, transparent) 30%, color-mix(in srgb, var(--card) 75%, transparent) 72%, var(--card) 100%); }
+.home-hero .hero-text { position: absolute; left: 32px; right: 32px; bottom: 8px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.hero-name { margin: 0; font-size: clamp(31px, 5vw, 52px); line-height: 1.08; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hero-detail { margin: 0; font-size: 14px; color: var(--ink2); }
+
+.welcome { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 90px 0 10px; }
+.welcome-title { margin: 0; font-size: 38px; color: var(--ink); }
+.welcome-search { display: flex; align-items: center; gap: 10px; width: 460px; max-width: calc(100vw - 64px); height: 44px; padding: 0 16px; border-radius: 12px; background: var(--raised); color: var(--ink2); font-size: 14px; }
+.welcome-key { font-size: 12px; color: var(--ink3); }
+.sites-row { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+.site-tile-big { flex-direction: column; gap: 7px; width: 86px; padding: 8px 4px 6px; border-radius: 12px; }
+.site-tile-big .site-box { width: 54px; height: 54px; border-radius: 13px; background: var(--raised); display: flex; align-items: center; justify-content: center; color: var(--ink2); }
+.site-tile-big .site-box.add { background: none; box-shadow: inset 0 0 0 1px var(--line); }
+.site-tile-big .site-name { font-size: 11.5px; color: var(--ink2); max-width: 78px; text-align: center; }
+
