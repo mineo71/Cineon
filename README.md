@@ -1,11 +1,12 @@
 # Cineon
 
 A very fast, personal browser for watching films, series and cartoons across many sites. It
-remembers what you watched, where, and how far you got, saves films to your Mac with one click, and
-lets you watch with friends. Native macOS, built on WebKit, with no accounts. Its one dependency is
-[Sparkle](https://sparkle-project.org), for updates.
+remembers what you watched, where, and how far you got, saves films to your computer with one click,
+and lets you watch with friends. Native on macOS (Swift, WebKit) and on Windows (C#, WinUI 3,
+WebView2), with no accounts. The Mac app updates with [Sparkle](https://sparkle-project.org), the
+Windows app with [Velopack](https://velopack.io).
 
-## Install
+## Install on a Mac
 
 Cineon needs macOS 26 or later, on Apple silicon or Intel.
 
@@ -30,6 +31,26 @@ it with one click. **Settings → Updates** can install updates quietly the next
 instead, or stop the daily check; **Cineon → Check for Updates…** looks right away. Updates replace
 only the app: profiles, the library and downloads stay where they are.
 
+## Install on Windows
+
+Cineon needs Windows 10 (1809) or later, on x64 or ARM.
+
+1. Download `Cineon.App-win-x64-Setup.exe` (or `-win-arm64-` for ARM PCs) from the
+   [latest release](https://github.com/mineo71/Cineon/releases/latest) and run it. It installs for
+   your account only, with no administrator prompt, and opens Cineon.
+2. The first time, Windows SmartScreen may say it protected your PC, because the installer isn't
+   signed with a paid certificate. Click **More info**, then **Run anyway**. Updates don't ask again.
+
+A portable zip is there too, for running without installing (it doesn't update itself).
+
+Updates work as on the Mac: a daily check, one click to install, or quietly on quit (**Settings →
+Updates**), and **More → Check for Updates…**. Your data lives in `%LOCALAPPDATA%\Cineon`, apart from
+the app, so updating or uninstalling never touches it.
+
+The Windows app is a 1:1 port of the Mac app: same screens and features, and the same data formats,
+so a profile folder copied from a Mac opens on Windows. What differs is listed in
+`windows/notes/*.md`; how it's built is in `windows/PLAN.md`.
+
 ## Build
 
 Requires Xcode and XcodeGen (`brew install xcodegen`).
@@ -42,7 +63,12 @@ make test       # unit tests
 make e2e        # drives a real Debug build against a fake streaming site (about 15 minutes)
 make filters    # refreshes the bundled filter lists
 make assets     # regenerates the icon and logo from design/logo-source.png
+make win-test   # the Windows app's shared code: tests (needs the .NET 10 SDK)
+make win-check  # type-checks the Windows app on a Mac
 ```
+
+The Windows app builds, launches on every screen and runs its end-to-end test on GitHub's Windows
+runners (`.github/workflows/windows.yml`); on Windows, `dotnet build windows/Cineon.App -r win-x64`.
 
 ## Releasing
 
