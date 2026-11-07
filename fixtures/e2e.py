@@ -629,7 +629,9 @@ def autopilot_tests():
     print("Next episode rolling on at the end")
     open_page("/serial/rozryv/2-sezon/5-seriya")
     start_playing()
-    wait_until(lambda: query("SELECT count(*) FROM sessions WHERE episode=5")[0][0] > 0, timeout=15)
+    if not wait_until(lambda: query("SELECT count(*) FROM sessions WHERE episode=5")[0][0] > 0, timeout=15):
+        s = state()
+        print(f"    (episode 5 isn't being tracked: track={s.get('track')} media={s.get('media')} url={s.get('url')} tabs={s.get('tabs')})")
     # The film is at the credits here, and the rule was learned above.
     media_eval("var v=document.querySelector('video'); v.currentTime=v.duration-2; v.play(); true")
     ended = wait_banner("next|Next: S2 E6|countdown", timeout=10)

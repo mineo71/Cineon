@@ -10,6 +10,11 @@ on:
       - "fixtures/**"
       - ".github/workflows/windows.yml"
   workflow_dispatch:
+    inputs:
+      e2e_only:
+        description: "End-to-end sections to run, such as autopilot,rescue (empty runs all)"
+        required: false
+        default: ""
 
 concurrency:
   group: windows-${{ github.ref }}
@@ -155,6 +160,7 @@ jobs:
           CINEON_E2E_BROWSERS: ${{ runner.temp }}\cineon-e2e-browsers
           CINEON_E2E_ARTIFACTS: ${{ github.workspace }}\e2e-artifacts
           CINEON_E2E_BUDGET: "75"
+          CINEON_E2E_ONLY: ${{ inputs.e2e_only }}
           CINEON_DEBUG_PORT: "8790"
           PYTHONIOENCODING: utf-8
           PYTHONUNBUFFERED: "1"
