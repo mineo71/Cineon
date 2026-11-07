@@ -106,7 +106,7 @@ Status: `todo`, `wip`, `done` (ported and tested), `n/a` (no Windows equivalent)
 | UI/DownloadsView, PlayerControls, Sheets, CommandBar | App/UI/* | done |
 | UI/TogetherView, ProfileView, ProfilePicker, RateModeView, Rating | App/UI/* | done |
 | UI/SettingsView, ImportSheet, RescueView, Splash | App/UI/* | done |
-| App/DebugCommands.swift | App/DebugCommands.cs (local HTTP port in Debug builds on scratch data) | todo |
+| App/DebugCommands.swift | App/DebugCommands.cs (local HTTP port in Debug builds on scratch data) | done |
 | App/Updater.swift | App/Updater.cs (Velopack) | done |
 | App/Intents.swift (Siri, Shortcuts) | Jump List tasks | done |
 | AirPlay | n/a | n/a |
