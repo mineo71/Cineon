@@ -597,8 +597,12 @@ def autopilot_tests():
     check("leaving with a minute to go is learned as the credits", credits and 50 < credits[0][0] < 70, str(credits))
     playing = wait_until(lambda: "playing=true" in state()["media"], timeout=10)
     check("the next episode starts by itself", playing, state()["media"])
-    sound = media_eval("document.querySelector('video').muted")
-    check("and with its sound on", sound.strip() == "0", sound)
+    # The new page may still be loading its player, so ask until there's a video to answer.
+    def muted():
+        value = media_eval("document.querySelector('video').muted").strip()
+        return value if value in ("0", "1") else None
+    sound = wait_until(muted, timeout=5) or "no answer"
+    check("and with its sound on", sound == "0", sound)
 
     wait_until(lambda: query("SELECT count(*) FROM sessions WHERE episode=3")[0][0] > 0, timeout=15)
     media_eval("var v=document.querySelector('video'); v.currentTime=v.duration-62; v.play(); true")
@@ -629,7 +633,9 @@ def autopilot_tests():
     print("Next episode rolling on at the end")
     open_page("/serial/rozryv/2-sezon/5-seriya")
     start_playing()
-    if not wait_until(lambda: query("SELECT count(*) FROM sessions WHERE episode=5")[0][0] > 0, timeout=15):
+    # This page's own tracking, not just any episode 5 in the database: an earlier section may have
+    # left one, and jumping to the end before this page is tracked leaves nothing to roll on from.
+    if not wait_until(lambda: state()["track"] not in ("-1", "-", "") and query("SELECT count(*) FROM sessions WHERE episode=5")[0][0] > 0, timeout=20):
         s = state()
         print(f"    (episode 5 isn't being tracked: track={s.get('track')} media={s.get('media')} url={s.get('url')} tabs={s.get('tabs')})")
     # The film is at the credits here, and the rule was learned above.
