@@ -15,7 +15,11 @@ public sealed class WebEnvironment
     /// occlusion tracking is off too, so a film behind another window, or the season grabber's
     /// helper parked out of sight, keeps playing the way a WKWebView does.
     public const string BrowserArguments =
-        "--disable-features=HardwareMediaKeyHandling,MediaSessionService,CalculateNativeWinOcclusion";
+        "--disable-features=HardwareMediaKeyHandling,MediaSessionService,CalculateNativeWinOcclusion"
+            // WebKit counts the Mac app's own script calls as the person's action, so resuming, the next
+            // episode, a party's play and the media keys start films with sound. Chromium never does
+            // for script calls, so on Windows any film may start with sound.
+            + " --autoplay-policy=no-user-gesture-required";
 
     private Task<CoreWebView2Environment>? _environment;
 

@@ -82,6 +82,8 @@ internal static class ShareCard
             WordWrapping = CanvasWordWrapping.NoWrap,
             HorizontalAlignment = align,
         };
+        // Win2D rejects a width that isn't positive and finite.
+        if (!float.IsFinite(maxWidth) || maxWidth < 1) maxWidth = maxWidth < 1 ? 1 : 10000;
         var layout = new CanvasTextLayout(device, text, format, maxWidth, 10000) { Options = CanvasDrawTextOptions.EnableColorFont };
         layout.SetColor(0, text.Length, color);
         return layout;

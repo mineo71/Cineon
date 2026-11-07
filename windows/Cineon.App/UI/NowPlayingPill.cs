@@ -123,17 +123,20 @@ public sealed class NowPlayingPill : Grid
         var row = Ui.HStack(0, open, _playButton, chevron);
         row.Padding = new Thickness(0, 0, 2, 0);
         row.Height = PillHeight;
+        // Full width and scaled, rather than sized: a width taken from the pill could push the pill
+        // wider near the end of a film, which widened the bar again (a layout cycle that crashed).
         _progress = new Border
         {
             Height = 2,
             Background = new SolidColorBrush(Palette.WithOpacity(p.Ink, 0.8)),
-            HorizontalAlignment = HorizontalAlignment.Left,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Bottom,
             IsHitTestVisible = false,
+            RenderTransformOrigin = new Windows.Foundation.Point(0, 0.5),
+            RenderTransform = new ScaleTransform { ScaleX = 0 },
         };
         var stack = new Grid { Children = { row, _progress } };
         var capsule = TopBar.BarCapsule(stack, _onHero);
-        capsule.SizeChanged += (_, _) => { if (_app.ActivePlayer is { } now) Update(now); };
         Children.Add(capsule);
     }
 
@@ -169,10 +172,10 @@ public sealed class NowPlayingPill : Grid
             }
             if (_detail.Text != text) _detail.Text = text;
         }
-        if (_progress is not null && Children.FirstOrDefault() is FrameworkElement capsule)
+        if (_progress?.RenderTransform is ScaleTransform scale)
         {
-            var fraction = Math.Clamp(player.Position / player.Duration, 0, 1);
-            _progress.Width = Math.Max(0, capsule.ActualWidth * fraction);
+            var fraction = player.Duration > 0 ? Math.Clamp(player.Position / player.Duration, 0, 1) : 0;
+            scale.ScaleX = double.IsFinite(fraction) ? fraction : 0;
         }
     }
 

@@ -945,7 +945,9 @@ def chrome_tests():
 def memory_tests():
     print_section("Memory")
     s = state()
-    check("app process stays light", int(s["memory"].rstrip("MB")) < 400, s["memory"])
+    # The Mac's limit is 400 MB of resident memory. Windows' working set also counts the WinUI and
+    # WebView2 host libraries mapped into the process, so the same app measures higher here.
+    check("app process stays light", int(s["memory"].rstrip("MB")) < 600, s["memory"])
     say(f"    app process {s['memory']} (working set; WebView2 runs in its own processes)")
 
 
