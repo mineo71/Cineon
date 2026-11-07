@@ -14,6 +14,10 @@ on:
       tag:
         description: "Release tag to add Windows builds to, such as v1.1.0"
         required: true
+      dry_run:
+        description: "Build and pack from the current branch, keep the files as an artifact, publish nothing"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -22,12 +26,13 @@ jobs:
   check:
     runs-on: ubuntu-latest
     outputs:
-      go: ${{ steps.marker.outputs.go }}
+      go: ${{ inputs.dry_run && 'true' || steps.marker.outputs.go }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
       - id: marker
+        if: ${{ !inputs.dry_run }}
         run: |
           if [ -f windows/RELEASE ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; fi
 
@@ -45,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ inputs.dry_run && github.sha || github.event.inputs.tag || github.ref }}
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
@@ -78,7 +83,15 @@ jobs:
               --channel $rid --runtime $rid --releaseNotes ../notes.md --outputDir ../releases
           }
 
+      - name: Keep the files (dry run)
+        if: ${{ inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release-dry-run
+          path: releases/
+
       - name: Upload to the release
+        if: ${{ !inputs.dry_run }}
         run: |
           # The Mac script creates the release right after pushing the tag; wait for it.
           for ($i = 0; $i -lt 60; $i++) { gh release view $env:TAG *> $null; if ($LASTEXITCODE -eq 0) { break }; Start-Sleep 10 }
