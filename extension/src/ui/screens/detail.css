@@ -1,0 +1,41 @@
+/* TitleDetailView.swift: 840 × 700 at most, 18 pt corners, a hairline and a deep shadow. */
+.title-card { position: relative; width: min(840px, 100%); max-height: min(700px, 100%); display: flex; border-radius: 18px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line), 0 20px 100px rgba(0,0,0,.5); overflow: hidden; }
+.title-card-scroll { flex: 1 1 auto; min-height: 0; max-height: min(700px, calc(100vh - 60px)); }
+.title-card .close-button { position: absolute; top: 14px; right: 14px; border-radius: 50%; background: color-mix(in srgb, var(--card) 55%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.title-card .close-button .btn-icon { border-radius: 50%; }
+
+.title-hero { position: relative; height: 280px; }
+.title-hero-image { position: absolute; inset: 0; transition: filter 350ms ease-in-out; }
+.title-hero-image.mono { filter: grayscale(1); }
+.title-hero .hero-blank { position: absolute; inset: 0; background: var(--raised); }
+.title-hero-shade { position: absolute; inset: 0; background: linear-gradient(to bottom, color-mix(in srgb, var(--card) 0%, transparent) 25%, var(--card) 100%); }
+.title-hero-row { position: absolute; left: 30px; right: 30px; bottom: 0; display: flex; align-items: flex-end; gap: 20px; }
+.title-name { margin: 0; font-size: 34px; line-height: 1.1; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.title-hero .facts { font-size: 12.5px; color: var(--ink2); }
+.action-row { gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.together-menu { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink2); border-radius: 7px; }
+.together-menu:hover { background: var(--raised); }
+
+.title-card-body { display: flex; flex-direction: column; gap: 26px; padding: 18px 30px 26px; }
+.overview { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink2); max-width: 620px; }
+.detail-section { display: flex; flex-direction: column; gap: 10px; }
+.detail-section.tight { gap: 8px; }
+.detail-section.history { gap: 6px; }
+.detail-section h3 { margin: 0; font-size: 17px; color: var(--ink); }
+.moments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(172px, 1fr)); gap: 8px; }
+.moment-cell { position: relative; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; }
+.moment-label { position: absolute; left: 6px; bottom: 6px; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,.62); color: #fff; font-size: 11px; animation: fade-in 120ms ease-out; }
+.place-row { gap: 10px; width: 100%; }
+.place-host { font-size: 13px; font-weight: 500; color: var(--ink); }
+.place-ref { font-size: 12px; color: var(--ink2); }
+.place-state { font-size: 12px; color: var(--ink2); }
+.place-when { font-size: 12px; color: var(--ink3); }
+.season-button { padding: 3px 8px; font-size: 12px; color: var(--ink2); white-space: nowrap; }
+.season-button.on { font-weight: 500; color: var(--ink); }
+.episode-row { gap: 10px; width: 100%; }
+.episode-number { width: 22px; text-align: right; font-size: 12.5px; color: var(--ink3); flex: none; }
+.episode-name { font-size: 13px; color: var(--ink); }
+.episode-at { font-size: 12px; color: var(--ink2); }
+.history-row, .skip-row { display: flex; gap: 10px; padding: 3px 8px; font-size: 12.5px; }
+.detail-footer { display: flex; align-items: center; gap: 10px; }
+.remove-title { font-size: 12.5px; color: var(--ink3); }

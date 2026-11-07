@@ -16,7 +16,7 @@ import {
 } from "../../core/data";
 import { MetadataService } from "../../core/metadata";
 import { PetTraits, PixelPet, ProfileStats } from "../../core/profile";
-import { RELOAD_KEYS, type Signal, SignalChannel } from "../../shared/messages";
+import { RELOAD_KEYS, type Signal, SignalChannel, send } from "../../shared/messages";
 
 /** chrome.storage.local in the extension; localStorage when a page is opened on its own (development). */
 export function pageStorage(): KeyValueStorage {
@@ -31,6 +31,18 @@ export function pageStorage(): KeyValueStorage {
       globalThis.localStorage?.setItem(`cineon:${key}`, JSON.stringify(value));
     },
   };
+}
+
+/** Puts the theme on the page root, and remembers it so the next page opens in it without a flash. */
+export function applyTheme(theme: string): void {
+  if (typeof document !== "undefined") document.documentElement.dataset.theme = theme;
+  UiDefaults.set("theme", theme);
+}
+
+/** The theme the last page used, applied before anything renders. */
+export function applyRememberedTheme(): void {
+  const theme = UiDefaults.get("theme");
+  if (theme && typeof document !== "undefined") document.documentElement.dataset.theme = theme;
 }
 
 /** Small key-value preferences of the UI itself (`@AppStorage`), per browser. */
@@ -90,11 +102,15 @@ export class Session {
     public settings: AppSettings,
     readonly channel: SignalChannel,
     metadataEnabled: boolean,
+    /** How this session was opened, so a profile switch opens the next one the same way. */
+    readonly options: SessionOptions,
   ) {
     this.metadata = new MetadataService<Title>({
       library: metadataLibrary(library),
       enabled: () => metadataEnabled && this.settings.fetchMetadata,
     });
+    // Stars and lists changed here reach the cloud backup, which lives in the background.
+    library.onPersonalChange = (title) => this.noteCloudChanges([title.id]);
     this.unsubscribers.push(
       library.changed.on((keys) => this.libraryChanged(keys)),
       profiles.changed.on(() => {
@@ -119,7 +135,7 @@ export class Session {
     const library = await LibraryStore.open(db);
     await library.seedDefaultSitesIfNeeded();
     const settings = await db.loadSettings();
-    return new Session(profiles, profile, db, library, settings, channel, options.metadata ?? true);
+    return new Session(profiles, profile, db, library, settings, channel, options.metadata ?? true, { ...options, storage, channel });
   }
 
   subscribe(listener: () => void): () => void {
@@ -182,6 +198,21 @@ export class Session {
     this.channel.post({ type: "settings", profileId: this.profile.id });
   }
 
+  private cloudIds = new Set<number>();
+  private cloudTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Tells the background's cloud backup which titles changed here (batched, after the write lands). */
+  noteCloudChanges(ids: Iterable<number>): void {
+    for (const id of ids) this.cloudIds.add(id);
+    if (this.cloudTimer || this.cloudIds.size === 0) return;
+    this.cloudTimer = setTimeout(() => {
+      this.cloudTimer = null;
+      const titleIds = [...this.cloudIds];
+      this.cloudIds.clear();
+      if (!this.closed) void send("cloud.noteChanges", { titleIds });
+    }, 300);
+  }
+
   /** Profile list changes from this page: tell the others. */
   notifyProfiles(): void {
     this.channel.post({ type: "profiles" });
@@ -199,6 +230,8 @@ export class Session {
   close(): void {
     this.closed = true;
     if (this.reloadTimer) clearTimeout(this.reloadTimer);
+    if (this.cloudTimer) clearTimeout(this.cloudTimer);
+    this.library.onPersonalChange = null;
     for (const off of this.unsubscribers) off();
     this.listeners.clear();
     this.db.close();

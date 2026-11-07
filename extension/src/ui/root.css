@@ -9,6 +9,9 @@
 .overlay-top { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; padding-top: 88px; pointer-events: none; }
 .overlay-top > * { pointer-events: auto; animation: bar-in 260ms cubic-bezier(.2,1,.35,1) both; transform-origin: top center; }
 @keyframes bar-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
-.reel-change { position: fixed; inset: 0; z-index: 95; background: var(--canvas); animation: fade-in 220ms ease-in both; }
+/* ReelChange: the logo turns once while the next person's library opens. */
+.reel-change { position: fixed; inset: 0; z-index: 95; display: flex; align-items: center; justify-content: center; background: var(--canvas); animation: fade-in 220ms ease-in both; }
+.reel-change .logo-mark { animation: reel-turn 750ms ease-in-out both; }
+@keyframes reel-turn { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .background-note { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 12.5px; color: var(--ink3); }
 @media (max-width: 860px) { .workspace { min-width: 0; } }

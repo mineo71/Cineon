@@ -55,7 +55,7 @@ export function PlayerHeader({ tab, compact = false }: { tab: TabSnapshot; compa
               {Timecode.string(media.position)}
             </span>
             <span class="time" style={{ fontSize: "10.5px", color: "var(--ink3)" }}>
-              {" / " + Timecode.string(media.duration)}
+              {"\u00a0/\u00a0" + Timecode.string(media.duration)}
             </span>
             <span class="spacer" />
             <IconButton icon="gobackward.10" label="Back 10 seconds" size={11} onClick={() => command({ kind: "skip", seconds: -10 })} />

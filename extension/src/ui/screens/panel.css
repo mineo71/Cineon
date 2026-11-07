@@ -1,0 +1,37 @@
+/* The side panel: one narrow column, the Mac's sizes. */
+.side-panel { position: relative; height: 100%; display: flex; flex-direction: column; background: var(--card); color: var(--ink); min-width: 260px; }
+.panel-header { flex: none; display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 12px 0 16px; box-shadow: inset 0 -0.5px 0 var(--line); background: var(--canvas); }
+.panel-brand { font-size: 15px; color: var(--ink); }
+.panel-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--raised2); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; flex: none; margin-left: 2px; }
+.panel-avatar:hover { box-shadow: inset 0 0 0 1px var(--ink3); }
+.panel-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 26px; padding: 16px 16px 80px; }
+
+.panel-section { display: flex; flex-direction: column; gap: 10px; }
+.panel-section-head { display: flex; align-items: baseline; gap: 10px; }
+.panel-section-head h2 { margin: 0; font-size: 17px; color: var(--ink); }
+.panel-section-head .time { margin-left: auto; font-size: 11.5px; color: var(--ink3); }
+.panel-quiet { margin: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; font-size: 12.5px; color: var(--ink3); }
+.panel-note { font-size: 11.5px; color: var(--ink3); }
+.panel-link { font-size: 12.5px; color: var(--ink2); margin-left: -8px; }
+
+.panel-card { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 12px; background: var(--raised); }
+.panel-actions { display: flex; flex-direction: column; gap: 2px; margin: 0 -6px; }
+.panel-action { width: 100%; font-size: 12.5px; color: var(--ink2); }
+.panel-action:disabled { color: var(--ink3); opacity: .7; }
+
+.panel-continue { display: flex; align-items: center; gap: 12px; padding: 6px 8px; margin: 0 -8px; border-radius: 9px; transition: background-color 120ms ease-out; }
+.panel-continue:hover { background: var(--raised); }
+.panel-continue-poster { flex: none; transition: transform 200ms ease-out; }
+.panel-continue-poster:hover { transform: scale(1.04); }
+.panel-continue-text { flex: 1 1 auto; min-width: 0; gap: 2px; }
+.panel-continue-name { font-size: 13px; font-weight: 500; color: var(--ink); }
+.panel-continue-detail { font-size: 11.5px; color: var(--ink3); }
+.panel-continue-play { color: var(--ink3); opacity: 0; transition: opacity 120ms; }
+.panel-continue:hover .panel-continue-play { opacity: 1; }
+
+.panel-rate { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 12px; background: var(--raised); outline: none; animation: panel-rate-in 280ms cubic-bezier(.2,.9,.3,1) both; }
+@keyframes panel-rate-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+.panel-rate-poster { flex: none; }
+.panel-rate-name { font-size: 16px; color: var(--ink); line-height: 1.2; }
+.panel-rate-detail { font-size: 11.5px; color: var(--ink3); white-space: pre-wrap; }
+.panel-rate-hint { font-size: 11px; color: var(--ink3); }

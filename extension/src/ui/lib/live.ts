@@ -66,9 +66,21 @@ export class Live<T> {
     this.offSignal = null;
   }
 
+  private lastJson: string | null = null;
+
   private set(value: T | null, answered: boolean): void {
-    this.value = value;
+    // A poll that brings the same answer changes nothing on screen.
+    let json: string | null = null;
+    try {
+      json = JSON.stringify(value);
+    } catch {
+      json = null;
+    }
+    const wasAnswered = this.answered;
     this.answered = this.answered || answered;
+    if (this.settled && json != null && json === this.lastJson && wasAnswered === this.answered) return;
+    this.lastJson = json;
+    this.value = value;
     this.settled = true;
     this.emit();
   }

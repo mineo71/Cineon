@@ -1,0 +1,19 @@
+/* ProfilePicker.swift: full screen, over everything but the reel change. */
+.profile-picker { position: fixed; inset: 0; z-index: 90; background: var(--canvas); display: flex; align-items: center; justify-content: center; overflow: auto; animation: fade-in 260ms ease-out; }
+.picker-column { display: flex; flex-direction: column; align-items: center; gap: 34px; padding: 40px; }
+.picker-title { margin: 0; font-size: 38px; color: var(--ink); }
+.picker-cards { display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap; justify-content: center; }
+.picker-card { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 140px; }
+.picker-name { font-size: 14px; color: var(--ink2); text-align: center; }
+.picker-name.current { color: var(--ink); font-weight: 600; }
+.picker-name.ink3 { color: var(--ink3); }
+.profile-poster { position: relative; width: 140px; height: 210px; border-radius: 8px; overflow: hidden; transition: transform 300ms cubic-bezier(.3,1.4,.5,1); }
+.profile-poster:hover { transform: scale(1.03); }
+.profile-art { position: absolute; inset: 0; }
+.profile-blank { position: absolute; inset: 0; background: var(--raised); display: flex; align-items: center; justify-content: center; }
+.profile-badge { position: absolute; left: 8px; bottom: 8px; display: flex; }
+.add-card { width: 140px; height: 210px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink2); display: flex; align-items: center; justify-content: center; }
+.add-card:hover { background: var(--raised); }
+.add-form { width: 140px; height: 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+.add-name { width: 100%; padding: 8px; border-radius: 8px; border: 0; background: var(--raised); font-size: 14px; color: var(--ink); text-align: center; }
+.add-name::placeholder { color: var(--ink3); }

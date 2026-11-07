@@ -14,6 +14,7 @@ import {
 import type { MetadataHit } from "../../core/metadata";
 import { type PlayerCommand, send } from "../../shared/messages";
 import { Session } from "./session";
+import { latestPosterUrl } from "./settings";
 import { Timecode } from "./format";
 
 export type Route = "home" | "library" | "timeline" | "downloads" | "together" | "profile" | "rate" | "settings";
@@ -89,12 +90,12 @@ export class AppModel {
     const old = this.session;
     try {
       if (announce) {
-        await old.profiles.setPoster(old.profile.id, old.library.continueWatching[0]?.title.posterUrl ?? old.profile.lastPosterUrl);
+        await old.profiles.setPoster(old.profile.id, latestPosterUrl(old.library) ?? old.profile.lastPosterUrl);
         await old.profiles.markUsed(profileId);
         old.channel.post({ type: "profile", profileId });
         void send("session.switchProfile", { profileId });
       }
-      const next = await Session.open(profileId, { channel: old.channel });
+      const next = await Session.open(profileId, old.options);
       old.close();
       this.session = next;
       this.state = { ...this.state, route: "home", detailTitleId: null, sheet: null, commandBar: null, profilePicker: false };

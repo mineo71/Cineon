@@ -1,7 +1,8 @@
+// The toolbar popup (popup.html).
 import { render } from "preact";
+import { Popup } from "./screens/Popup";
+import { applyRememberedTheme } from "./lib/session";
 
-function Popup() {
-  return <main class="placeholder"><h1>Cineon</h1></main>;
-}
-
+document.documentElement.dataset.mode = "popup";
+applyRememberedTheme();
 render(<Popup />, document.getElementById("root")!);

@@ -67,12 +67,10 @@ export function useWidth<T extends HTMLElement>(fallback = 1400): [RefObject<T |
   useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
-    setWidth(element.clientWidth || fallback);
+    // The whole box, padding included, as SwiftUI's onGeometryChange measures a padded view.
+    setWidth(element.offsetWidth || fallback);
     if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) setWidth(entry.contentRect.width);
-    });
+    const observer = new ResizeObserver(() => setWidth(element.offsetWidth));
     observer.observe(element);
     return () => observer.disconnect();
   }, [fallback]);

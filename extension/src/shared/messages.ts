@@ -269,6 +269,13 @@ export interface UiRequests {
   /** TogetherModel.adopt, then CloudLibrary.sync when it worked. */
   "together.adopt": { payload: { recoveryCode: string }; result: { ok: boolean } };
 
+  // Cloud backup
+  /**
+   * The page changed these titles' stars or list (its LibraryStore's `onPersonalChange`), or imported
+   * a library file (`LibraryExport.apply`'s titles): reload, then `CloudLibrary.noteChange` each.
+   */
+  "cloud.noteChanges": { payload: { titleIds: number[] }; result: { ok: boolean } };
+
   // Profiles
   /** The page switched person (ProfileStore.lastUsedId is already the new one): close the old session, open this one. */
   "session.switchProfile": { payload: { profileId: string }; result: { ok: boolean } };

@@ -97,7 +97,7 @@ export function libraryEmptyText(query: LibraryQuery): string {
   if (LibraryQuery.hasFilters(query)) return "Nothing matches these filters.";
   switch (query.list) {
     case "backlog":
-      return "Films you want to see go here. Press Add to backlog in Cineon's toolbar menu on any film's page to add it.";
+      return "Films you want to see go here. On any film's page, click Cineon in the toolbar, then Add to backlog.";
     case "watching":
       return "Start playing something, and it appears here on its own.";
     case "watched":

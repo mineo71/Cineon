@@ -2,17 +2,17 @@
 // overlays above (title card, sheets, the series proposal, the command bar, toasts, the profile
 // picker). `app.html#panel` is the side panel's compact layout over the same model.
 
-import type { ComponentChildren } from "preact";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { send } from "../shared/messages";
 import { Icon } from "./components/Icon";
 import { MenuLayer, isMenuOpen } from "./components/menu";
+import { Overlay, ToastHost } from "./components/overlay";
 import { LogoMark } from "./components/media";
 import { AppModel, type Route, parseHash } from "./lib/app";
 import { Page, type PageContext, useKeys, useModel, useSession, useUi } from "./lib/hooks";
 import { type LiveSet, makeLive } from "./lib/live";
 import { hasCommand } from "./lib/platform";
-import { Session } from "./lib/session";
+import { Session, applyTheme } from "./lib/session";
 import { addStyles } from "./lib/styles";
 import { CommandBar } from "./screens/CommandBar";
 import { DownloadsView, SeriesProposalOverlay } from "./screens/Downloads";
@@ -44,6 +44,7 @@ export function Root({ mode }: { mode: "app" | "panel" }) {
     Session.open()
       .then((session) => {
         if (cancelled) return session.close();
+        applyTheme(session.settings.theme);
         model = new AppModel(session);
         const live: LiveSet = makeLive(session.channel, () => model!.session.db);
         model.applyHash(location.hash);
@@ -79,9 +80,7 @@ export function Root({ mode }: { mode: "app" | "panel" }) {
 function Theme() {
   const session = useSession();
   const theme = session.settings.theme;
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
+  useEffect(() => applyTheme(theme), [theme]);
   return null;
 }
 
@@ -151,7 +150,11 @@ function Workspace() {
       )}
       <ToastHost />
       {ui.profilePicker && <ProfilePicker />}
-      {model.changingReel && <div class="reel-change" />}
+      {model.changingReel && (
+        <div class="reel-change">
+          <LogoMark size={92} />
+        </div>
+      )}
       <Splash />
     </div>
   );
@@ -182,53 +185,6 @@ function RouteView({ route }: { route: Route }) {
   }
 }
 
-/** DimmedBackdrop and the card above it. */
-export function Overlay({
-  children,
-  onDismiss,
-  strength = 0.5,
-  align = "center",
-}: {
-  children: ComponentChildren;
-  onDismiss: () => void;
-  strength?: number;
-  align?: "center" | "top";
-}) {
-  return (
-    <div class="overlay">
-      <div class="dim" style={{ background: `rgba(0,0,0,${strength})` }} onClick={onDismiss} />
-      <div class={`overlay-${align}`}>{children}</div>
-    </div>
-  );
-}
-
-/** ToastHost: one at a time, at the bottom, in glass. */
-export function ToastHost() {
-  const model = useModel();
-  const ui = useUi();
-  const toast = ui.toast;
-  if (!toast) return null;
-  return (
-    <div class="toast-host" role="status" aria-live="polite">
-      <div class="toast glass" key={toast.id}>
-        <span class="message">{toast.message}</span>
-        {toast.action && (
-          <button
-            type="button"
-            class="btn-link"
-            onClick={() => {
-              toast.action!.run();
-              model.dismissToast();
-            }}
-          >
-            {toast.action.title}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 /** Whether the background answers at all, for pages that want to say so. */
 export function useBackgroundAlive(): boolean | null {
   const [alive, setAlive] = useState<boolean | null>(null);
@@ -252,8 +208,4 @@ export function BackgroundNote({ text }: { text: string }) {
       {text}
     </p>
   );
-}
-
-export function useMemoOnce<T>(make: () => T): T {
-  return useMemo(make, []);
 }

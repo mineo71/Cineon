@@ -1,0 +1,26 @@
+/* The toolbar popup: 340 wide, the Mac's popover sizes. */
+html:has(.popup), html:has(.popup) body { height: auto; }
+body:has(.popup) { overflow: auto; }
+.popup { width: 340px; display: flex; flex-direction: column; gap: 14px; padding: 14px 14px 16px; background: var(--card); color: var(--ink); }
+.pop-header { display: flex; align-items: center; gap: 8px; height: 26px; }
+.pop-header .t-bold { font-size: 15px; color: var(--ink); }
+
+.pop-film { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: var(--raised); }
+.pop-name { font-size: 16px; line-height: 1.2; color: var(--ink); }
+.pop-ref { font-size: 11.5px; color: var(--ink2); }
+.pop-site { font-size: 11.5px; color: var(--ink3); }
+.pop-time { font-size: 10.5px; color: var(--ink2); }
+.pop-quiet { font-size: 12px; color: var(--ink3); }
+
+.pop-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pop-fix { font-size: 12.5px; color: var(--ink2); }
+
+.pop-shields { display: flex; align-items: center; gap: 10px; padding: 12px 2px 0; box-shadow: inset 0 0.5px 0 var(--line); color: var(--ink2); }
+.pop-shields-label { font-size: 13px; color: var(--ink); }
+.pop-shields-line { font-size: 11.5px; color: var(--ink3); }
+.pop-shields-detail { font-size: 11px; color: var(--ink3); }
+
+.pop-note { margin: 0; font-size: 12px; color: var(--ink2); line-height: 1.35; }
+.pop-message { padding: 8px 10px; border-radius: 9px; background: var(--raised); animation: fade-in 150ms ease-out; }
+.pop-footer { display: flex; gap: 8px; }
+.pop-open { flex: 1 1 auto; }
