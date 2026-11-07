@@ -140,8 +140,9 @@ public sealed class SeasonGrabberTests : IDisposable
             PollInterval = TimeSpan.FromMilliseconds(5),
             SlotInterval = TimeSpan.FromMilliseconds(5),
             NudgeInterval = TimeSpan.FromMilliseconds(50),
-            FirstLoadTimeout = TimeSpan.FromMilliseconds(300),
-            EpisodeWait = TimeSpan.FromMilliseconds(300),
+            // Generous: the whole suite runs in parallel, and CI machines are slower.
+            FirstLoadTimeout = TimeSpan.FromMilliseconds(1500),
+            EpisodeWait = TimeSpan.FromMilliseconds(1500),
         };
     }
 
@@ -159,10 +160,23 @@ public sealed class SeasonGrabberTests : IDisposable
         },
     };
 
+    /// The grabber and the download center hand work to each other, so one wait on each isn't
+    /// enough under load: wait until a whole pass finds nothing new.
     private async Task Settle(SeasonGrabber grabber)
     {
-        await grabber.IdleAsync();
-        await _rig.Center.IdleAsync();
+        string? last = null;
+        for (var pass = 0; pass < 200; pass++)
+        {
+            await grabber.IdleAsync();
+            await _rig.Center.IdleAsync();
+            await Task.Delay(15, TestContext.Current.CancellationToken);
+            var job = grabber.CurrentJob;
+            var now = string.Join(",", _rig.Center.Items.Select(i => $"{i.Ref.Season}x{i.Ref.Episode}:{i.Status}"))
+                + $"|{job?.Handled}|{job?.IsFinished}|{job?.IsPaused}|{grabber.IsBusy}|{_rig.Center.ActiveCount}";
+            // Walking addresses pauses between probes, so a quiet moment isn't enough while it's busy.
+            if (now == last && (!grabber.IsBusy || pass > 150)) return;
+            last = now;
+        }
     }
 
     private IEnumerable<EpisodeRef> Downloaded() =>

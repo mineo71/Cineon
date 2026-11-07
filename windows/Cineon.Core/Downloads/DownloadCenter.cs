@@ -102,11 +102,24 @@ public sealed class DownloadCenter
     /// <summary>Waits until nothing is starting or running. For tests and for closing.</summary>
     internal async Task IdleAsync()
     {
+        var waits = 0;
         while (true)
         {
             Task[] running;
-            lock (_gate) running = [.. _running.Where(t => !t.IsCompleted)];
-            if (running.Length == 0) return;
+            bool queued;
+            lock (_gate)
+            {
+                running = [.. _running.Where(t => !t.IsCompleted)];
+                // A finished download pumps the next one a moment later, and a starting one isn't
+                // running yet; both count.
+                queued = !_suspended && (_starting.Count > 0 || Items.Any(i => i.Status is DownloadStatus.Queued or DownloadStatus.Downloading));
+            }
+            if (running.Length == 0)
+            {
+                if (!queued || ++waits > 200) return;
+                await Task.Delay(10).ConfigureAwait(false);
+                continue;
+            }
             try
             {
                 await Task.WhenAll(running).ConfigureAwait(false);
