@@ -95,17 +95,17 @@ Status: `todo`, `wip`, `done` (ported and tested), `n/a` (no Windows equivalent)
 | --- | --- | --- |
 | App/CineonApp.swift | App/Program.cs, App.cs, menus become keyboard accelerators | done |
 | App/AppModel.swift, ProfileSession.swift | App/AppModel.cs, ProfileSession.cs | done |
-| UI/Theme.swift | App/UI/Theme.cs (Palette, Typeface, button styles) | todo |
-| UI/RootView.swift, TopBar.swift, Sidebar.swift | App/UI/MainWindow.cs, TopBar.cs, BrowserBar.cs | todo |
-| Browser/* | App/Browser/* (WebView2 tabs, script bridge, tracking, rescue, autopilot, frames) | todo |
+| UI/Theme.swift | App/UI/Theme.cs (Palette, Typeface, button styles) | done |
+| UI/RootView.swift, TopBar.swift, Sidebar.swift | App/UI/MainWindow.cs, TopBar.cs, BrowserBar.cs | done |
+| Browser/* | App/Browser/* (WebView2 tabs, script bridge, tracking, rescue, autopilot, frames) | done |
 | App/Playback.swift, StayAwake.swift | App/Playback/* (SMTC, sleep timer, SetThreadExecutionState) | done |
-| Downloads/LocalPlayback.swift | App/Playback/LocalPlayer.cs | todo |
+| Downloads/LocalPlayback.swift | App/Playback/LocalPlayer.cs | done |
 | App/EpisodeAlerts.swift | App/Services/EpisodeAlerts.cs (app notifications) | done |
 | App/TogetherModel.swift | App/TogetherModel.cs | done |
-| UI/HomeView, LibraryView, TitleDetailView, WatchTimelineView | App/UI/Pages/* | todo |
-| UI/DownloadsView, PlayerControls, Sheets, CommandBar | App/UI/* | todo |
-| UI/TogetherView, ProfileView, ProfilePicker, RateModeView, Rating | App/UI/* | todo |
-| UI/SettingsView, ImportSheet, RescueView, Splash | App/UI/* | todo |
+| UI/HomeView, LibraryView, TitleDetailView, WatchTimelineView | App/UI/Pages/* | done |
+| UI/DownloadsView, PlayerControls, Sheets, CommandBar | App/UI/* | done |
+| UI/TogetherView, ProfileView, ProfilePicker, RateModeView, Rating | App/UI/* | done |
+| UI/SettingsView, ImportSheet, RescueView, Splash | App/UI/* | done |
 | App/DebugCommands.swift | App/DebugCommands.cs (local HTTP port in Debug builds on scratch data) | todo |
 | App/Updater.swift | App/Updater.cs (Velopack) | done |
 | App/Intents.swift (Siri, Shortcuts) | Jump List tasks | done |
