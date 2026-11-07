@@ -643,6 +643,7 @@ async function profileCommand(runtime: Runtime, name: string, query: DebugQuery)
   const session = await runtime.ready();
   if (name === "addprofile") {
     const profile = await session.profiles.add(q(query, "name") ?? "Guest");
+    runtime.deps.pages.post({ type: "profiles" });
     if (flag(query, "switch")) {
       await session.profiles.markUsed(profile.id);
       await runtime.switchProfile(profile.id);

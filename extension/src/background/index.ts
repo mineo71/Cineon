@@ -228,6 +228,7 @@ if (__DEV__) {
       try {
         const [result] = await chrome.scripting.executeScript({
           target: { tabId, frameIds: [frameId] },
+          injectImmediately: true,
           world: "MAIN" as chrome.scripting.ExecutionWorld,
           // Development builds only: the e2e test's own expressions, in the page's world.
           func: (code: string) => (0, eval)(code),

@@ -124,13 +124,30 @@ function chromeTabs(): TabsApi {
   };
 }
 
+/** How long a page call may take; capture() on a big frame is the slowest. */
+const PAGE_CALL_TIMEOUT_MS = 8000;
+
 /** `window[target][method](...args)` in the extension's isolated world of one frame. */
-function chromePage(): PageCalls {
+function chromePage(): PageCalls & { run(tabId: number, frameId: number, target: PageTarget, method: string, args: readonly unknown[]): Promise<unknown> } {
   return {
     async call(tabId, frameId, target: PageTarget, method, args) {
+      // A frame that never commits (a page stuck loading) never answers: give up after a while.
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<null>((resolve) => {
+        timer = setTimeout(() => resolve(null), PAGE_CALL_TIMEOUT_MS);
+      });
+      try {
+        return await Promise.race([this.run(tabId, frameId, target, method, args), timeout]);
+      } finally {
+        clearTimeout(timer);
+      }
+    },
+    async run(tabId: number, frameId: number, target: PageTarget, method: string, args: readonly unknown[]): Promise<unknown> {
       try {
         const [result] = await chrome.scripting.executeScript({
           target: { tabId, frameIds: [frameId] },
+          // Now, not at document_idle: a page still loading (a stream that never finishes) would hold the call.
+          injectImmediately: true,
           world: "ISOLATED" as chrome.scripting.ExecutionWorld,
           func: (t: string, m: string, a: unknown[]) => {
             const object = (window as unknown as Record<string, Record<string, unknown> | undefined>)[t];
