@@ -690,6 +690,7 @@ export class Browser {
     if (documentId != null && documentId === tab.documentId) return;
     const wasTrusted = tab.trustedNavigation;
     const previousUrl = tab.url;
+    const wasShielded = tab.track != null || tab.media != null || this.ctx.library.siteForHost(hostOf(previousUrl)) != null;
     tab.documentId = documentId;
     tab.trustedNavigation = false;
     tab.failure = null;
@@ -704,7 +705,7 @@ export class Browser {
     detach(this.ctx.tracker.tabNavigated(tab));
     this.noticeSiteMove(tab, url);
     this.urlChanged(tab, url);
-    if (!wasTrusted && transition) this.checkRedirect(tab, previousUrl, url, transition);
+    if (!wasTrusted && wasShielded && transition) this.checkRedirect(tab, previousUrl, url, transition);
     this.changed(tab);
   }
 
@@ -791,17 +792,21 @@ export class Browser {
     if (scheme === "about" || scheme === "blob" || scheme === "data") return;
     const prefs = this.ctx.shields.prefsFor(fromHost);
     if (!this.settings.redirectShield || prefs.shieldsOff || prefs.allowRedirects) return;
-    // A gesture in the page just now is the person's own doing.
-    if (this.now() - tab.lastGestureAt < 1000) return;
-    const wasShielded = tab.track != null || this.ctx.library.siteForHost(fromHost) != null;
-    if (!wasShielded) return;
     this.blockRedirect(tab, fromHost, to, true);
   }
 
+  /**
+   * Counts a blocked redirect and offers to allow it. With `goBack` the tab returns to the page it
+   * was sent away from first; the count and the toast wait until that page is back.
+   */
   blockRedirect(tab: TabState, fromHost: string | null, target: string, goBack: boolean): void {
+    if (goBack) {
+      detach(this.platform.tabs.goBack(tab.id));
+      this.ctx.clock.schedule(1500, () => this.blockRedirect(tab, fromHost, target, false));
+      return;
+    }
     tab.blocked = { ...tab.blocked, redirects: tab.blocked.redirects + 1 };
     this.ctx.shields.record({ redirects: 1 });
-    if (goBack) detach(this.platform.tabs.goBack(tab.id));
     const host = hostOf(target) ?? "another site";
     this.ctx.toasts.show(`Blocked redirect to ${host}`, {
       tab,

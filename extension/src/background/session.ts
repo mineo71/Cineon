@@ -426,6 +426,7 @@ export class ProfileSession implements SessionContext {
     }
     await this.profiles.setPoster(this.profile.id, this.latestPosterUrl).catch(() => undefined);
     this.togetherIdle?.();
+    this.playerTimer?.();
     this.reloadTimer?.();
     this.downloadsTimer?.();
     this.posterTimer?.();
@@ -525,17 +526,27 @@ export class ProfileSession implements SessionContext {
 
   private lastPlayer = "";
   private lastPlayerAt = 0;
+  private playerTimer: (() => void) | null = null;
 
-  /** The `player` signal: at most once a second, and only when something changed. */
+  /** The `player` signal: at most once a second, only when something changed, never losing the last change. */
   publishPlayer(force = false): void {
     if (this.closed) return;
     const tab = this.playback.activeTab();
     const snapshot = tab ? tabSnapshot(tab, this.browser, this.shieldsCtl) : null;
     const text = JSON.stringify(snapshot);
-    const now = this.clock.now();
-    if (!force && (text === this.lastPlayer || now - this.lastPlayerAt < 1000)) return;
+    if (!force && text === this.lastPlayer) return;
+    const wait = 1000 - (this.clock.now() - this.lastPlayerAt);
+    if (!force && wait > 0) {
+      this.playerTimer ??= this.clock.schedule(wait, () => {
+        this.playerTimer = null;
+        this.publishPlayer();
+      });
+      return;
+    }
+    this.playerTimer?.();
+    this.playerTimer = null;
     this.lastPlayer = text;
-    this.lastPlayerAt = now;
+    this.lastPlayerAt = this.clock.now();
     this.services.pages.post({ type: "player", player: snapshot });
   }
 
