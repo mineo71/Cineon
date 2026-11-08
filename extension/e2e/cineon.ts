@@ -233,6 +233,9 @@ export class Cineon {
       "--window-position=0,0",
       "--window-size=1400,940",
       ...(headless ? ["--headless=new"] : []),
+      // What Playwright does by default: Ubuntu 24.04 runners refuse Chrome's sandbox (AppArmor and
+      // user namespaces). `--test-type` keeps the "unsupported flag" bar from taking page height.
+      ...(process.platform === "linux" && process.env.CI && !process.env.CINEON_E2E_SANDBOX ? ["--no-sandbox", "--test-type"] : []),
       "about:blank",
     ];
   }

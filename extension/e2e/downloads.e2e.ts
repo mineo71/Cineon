@@ -54,19 +54,20 @@ test("[downloads] a file, its subtitles, and a stream", async ({ cineon: c }) =>
     await c.check("its subtitles are saved too", item.subtitles === "1", item.subtitles);
     const label = await c.evaluate("(() => { const h = document.querySelector('cineon-download'); return h ? 'present' : 'gone' })()");
     await c.check("the button stays to say it's saved", label === "present", label);
-
-    c.heading("Downloads: playing the copy on this Mac");
-    for (const name of [
-      "the native player starts",
-      "the screen stays on in the native player too",
-      "downloaded subtitles show in the player",
-      "ambient light follows the downloaded film",
-    ]) {
-      c.skip(name, NO_PLAYER);
-    }
-    await c.check("the download is linked to a title in the library", item.title !== "-1", item.title);
-    for (const name of ["leaving the player lets the Mac sleep", "its place is kept", "watching it goes on the timeline"]) c.skip(name, NO_PLAYER);
   }
+
+  c.heading("Downloads: playing the copy on this Mac");
+  for (const name of [
+    "the native player starts",
+    "the screen stays on in the native player too",
+    "downloaded subtitles show in the player",
+    "ambient light follows the downloaded film",
+  ]) {
+    c.skip(name, NO_PLAYER);
+  }
+  // As e2e.py, only once the download is there.
+  if (items) await c.check("the download is linked to a title in the library", items[0]!.title !== "-1", items[0]!.title);
+  for (const name of ["leaving the player lets the Mac sleep", "its place is kept", "watching it goes on the timeline"]) c.skip(name, NO_PLAYER);
 
   c.heading("Downloads: a film that only streams as a playlist");
   await c.openPage("/hls-film");

@@ -73,7 +73,8 @@ the step summary.
   waits on the keychain and pages never load — that is what kept an earlier probe "off the
   network"), `--disable-backgrounding-occluded-windows` (a covered window still counts as visible, for
   frames and ambient), `--autoplay-policy=no-user-gesture-required` (below), and the component
-  extensions off.
+  extensions off. On Linux CI also `--no-sandbox --test-type`, as Playwright's own launch does
+  (Ubuntu 24.04 can refuse Chrome's sandbox); `CINEON_E2E_SANDBOX=1` keeps the sandbox.
 
 ## Checks against e2e.py
 
@@ -147,9 +148,37 @@ both themes (screenshots too).
   the bundled UI, and a coin-miner false positive from EasyPrivacy's host list); the end-to-end test is
   Chromium.
 
-## Ran locally (macOS, Chrome for Testing 156, headed)
+## Ran locally (macOS, Chrome for Testing 156.0.8078.4, headed, 2026-11-08)
 
-See the commit that added this file for the results of the first local run.
+Every section, in 11.5 minutes: **205 of 210 passed (28 skipped)** (6 more checks run when the direct
+download works: they only look at a finished file, as in e2e.py). The five failures are the
+extension's, not the test's, each reproduced on its own:
+
+1. **[main] scripted redirect blocked, redirect counted.** The fixture redirects to
+   `ads.example.test`, which doesn't resolve. Chrome never commits a navigation that fails like that
+   (`webNavigation` gives `onBeforeNavigate` then `onErrorOccurred`, no `onCommitted`), and the
+   redirect shield only looks at commits (`Browser.didCommit` → `checkRedirect`), so the tab is left
+   on the browser's error page. A redirect to a host that answers would be caught; one that doesn't
+   (a dead ad network) isn't. Fix in the runtime: a main-frame `onErrorOccurred` right after an
+   untrusted navigation away from a shielded page is a blocked redirect too (go back, count it).
+2. **[downloads] the file downloads with the page's cookie and address.** The CDN answers only with
+   the page's cookie (`cdn_token`, set by the page) and a Referer under `/rezka/`; the download comes
+   back 403 ("The site refused…"). The page itself and the rest of the downloads work. Either the
+   `DnrHeaderRules` Referer rule doesn't reach `chrome.downloads` requests, or the SameSite=Lax cookie
+   isn't sent on an extension-initiated download; worth checking with `chrome.downloads` and the
+   rule's `resourceTypes`/`tabIds` in a real browser.
+3. **[downloads] the stream saves as one file.** The joined HLS stream (60 MB, complete) is saved as
+   `Cineon/Only Film.txt`: Chrome replaced the `.ts` the center asked for, likely from the blob's
+   type. Give the blob `video/mp2t` (or save as `.mp4`/`.m2ts`).
+4. **[rescue] a dead address moves to another address of the site.** With `flix-alive.localhost`
+   among the known hosts (`db.knownHosts()` returns it, the site probe says it's alive, and
+   `RescueMatcher.mirrors` returns it when called on its own), the live rescue still records
+   `mirrorsTotal: 0` and goes to the other site's search result instead. Something between
+   `begin`/`start` and `tryMirrors` loses the mirror; `tryMirrors`' `knownHosts().catch(() => [])` is
+   the first suspect.
+
+Also seen once: Playwright lost the service worker mid-section (the frames section, after a quiet
+32 s); it didn't happen again in two more runs, and the harness now recovers (above).
 
 ## CI and releases
 
