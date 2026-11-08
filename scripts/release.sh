@@ -50,8 +50,10 @@ sed -i '' -E "s/^( *MARKETING_VERSION: )\".*\"/\1\"$VERSION\"/" project.yml
 sed -i '' -E "s/^( *CURRENT_PROJECT_VERSION: )\".*\"/\1\"$build\"/" project.yml
 # Until the release commit exists, put the version files back however this ends.
 committed=0
-restore() { [[ $committed == 1 ]] || git checkout --quiet -- project.yml Casks/cineon.rb 2>/dev/null || true; }
+restore() { [[ $committed == 1 ]] || git checkout --quiet -- project.yml Casks/cineon.rb extension/package.json extension/package-lock.json 2>/dev/null || true; }
 trap restore EXIT
+# The browser extension carries the same version (its manifest and release zips are named from it).
+(cd extension && npm version "$VERSION" --no-git-tag-version --allow-same-version >/dev/null) || fail "couldn't set the extension's version (is npm installed?)"
 
 echo "Building Cineon $VERSION ($build)…"
 make project >/dev/null
@@ -140,7 +142,7 @@ if [[ $DRY_RUN == 1 ]]; then
     exit 0
 fi
 
-git add project.yml Casks/cineon.rb
+git add project.yml Casks/cineon.rb extension/package.json extension/package-lock.json
 git commit --quiet -m "Release $VERSION"
 committed=1
 git tag -a "v$VERSION" -m "Cineon $VERSION"

@@ -1,0 +1,97 @@
+name: extension-release
+
+# `make release` on the Mac publishes the release and pushes the tag, with extension/package.json
+# already at the release's version (scripts/release.sh sets it). This adds the browser extension to
+# the same release: Cineon-extension-<version>-chrome.zip (Chrome and Edge, load unpacked) and
+# -firefox.zip. Tags made before the extension existed have no extension/ and are left alone.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to add the extension to, such as v1.2.0"
+        required: true
+      dry_run:
+        description: "Build and pack from the current branch, keep the zips as an artifact, publish nothing"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.dry_run && github.sha || github.event.inputs.tag || github.ref }}
+
+      - name: Is the extension in this tag
+        id: has
+        run: |
+          if [ -f extension/package.json ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; echo "No extension/ in $TAG: nothing to add."; fi
+
+      - uses: actions/setup-node@v4
+        if: ${{ steps.has.outputs.go == 'true' }}
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Version
+        if: ${{ steps.has.outputs.go == 'true' }}
+        working-directory: extension
+        run: |
+          version="${TAG#v}"
+          package=$(node -p "require('./package.json').version")
+          echo "VERSION=$package" >> "$GITHUB_ENV"
+          if [ "$package" != "$version" ]; then
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "::warning::extension/package.json is $package, the tag is $TAG (dry run: packing $package)"
+            else
+              echo "::error::extension/package.json is $package but the tag is $TAG. scripts/release.sh sets it; fix the version and tag again."
+              exit 1
+            fi
+          fi
+
+      - name: Install and test
+        if: ${{ steps.has.outputs.go == 'true' }}
+        working-directory: extension
+        run: |
+          npm ci --legacy-peer-deps
+          npx vitest run
+
+      - name: Build and pack
+        if: ${{ steps.has.outputs.go == 'true' }}
+        working-directory: extension
+        run: |
+          node scripts/build.mjs --package
+          if grep -rl -e cineonDebug -e __DEV__ dist/; then echo "::error::debug hooks in the release build"; exit 1; fi
+          npx --yes web-ext@10.8.0 lint --source-dir dist/firefox --self-hosted
+          ls -l packages/
+          test -f "packages/Cineon-extension-$VERSION-chrome.zip"
+          test -f "packages/Cineon-extension-$VERSION-firefox.zip"
+
+      - name: Keep the zips (dry run)
+        if: ${{ steps.has.outputs.go == 'true' && inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-release-dry-run
+          path: extension/packages/*.zip
+
+      - name: Upload to the release
+        if: ${{ steps.has.outputs.go == 'true' && !inputs.dry_run }}
+        working-directory: extension
+        run: |
+          # The Mac script creates the release right after pushing the tag; wait for it.
+          for i in $(seq 1 60); do gh release view "$TAG" >/dev/null 2>&1 && break; sleep 10; done
+          gh release view "$TAG" >/dev/null || { echo "::error::no release for $TAG after ten minutes"; exit 1; }
+          gh release upload "$TAG" "packages/Cineon-extension-$VERSION-chrome.zip" "packages/Cineon-extension-$VERSION-firefox.zip" --clobber
