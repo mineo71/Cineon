@@ -72,7 +72,7 @@ npm run package    # zips for GitHub releases and the stores
 | Content scripts and messaging | App/Browser/ScriptBridge | done (notes/runtime.md) |
 | Tracker, autopilot, rescue, frames, ambient | App/Browser | done; ambient computed, not drawn (notes/runtime.md) |
 | Screens | App/UI | done (notes/ui.md) |
-| End-to-end test | fixtures/e2e.py | in CI: 191 ported, 24 new, 28 skipped (notes/e2e.md) |
+| End-to-end test | fixtures/e2e.py | done: 216/216 on Linux CI, 28 skipped (notes/e2e.md) |
 | Packaging and releases | | done: extension.yml, extension-release.yml, release.sh sets the version |
 
 ## Distribution
