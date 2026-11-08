@@ -63,17 +63,17 @@ npm run package    # zips for GitHub releases and the stores
 
 | Area | Source | Status |
 | --- | --- | --- |
-| Data model, IndexedDB store, library queries, settings | Core/Data | todo |
-| Title parser, rescue matcher, episode links, metadata, image cache | Core/Parsing, Core/Metadata | todo |
-| Shields: lists → DNR rulesets, cosmetic CSS, site toggles | Core/Shields | todo |
-| Profile stats, pixel pet (renderer) | Core/Profile | todo |
-| Together client and model, cloud backup | Core/Together | todo |
-| Downloads: queue, HLS, season and series jobs, subtitles | Core/Downloads | todo |
-| Content scripts and messaging | App/Browser/ScriptBridge | todo |
-| Tracker, autopilot, rescue, frames, ambient | App/Browser | todo |
-| Screens | App/UI | todo |
-| End-to-end test | fixtures/e2e.py | todo |
-| Packaging and releases | | todo |
+| Data model, IndexedDB store, library queries, settings | Core/Data | done (notes/data.md) |
+| Title parser, rescue matcher, episode links, metadata, image cache | Core/Parsing, Core/Metadata | done, 4,342/4,342 parity (notes/parsing.md) |
+| Shields: lists → DNR rulesets, cosmetic CSS, site toggles | Core/Shields | done, 13,575 rules (notes/shields.md) |
+| Profile stats, pixel pet (renderer) | Core/Profile | done, hashes match (notes/profile.md) |
+| Together client and model, cloud backup | Core/Together | done (notes/together.md) |
+| Downloads: queue, HLS, season and series jobs, subtitles | Core/Downloads | done (notes/downloads.md) |
+| Content scripts and messaging | App/Browser/ScriptBridge | done (notes/runtime.md) |
+| Tracker, autopilot, rescue, frames, ambient | App/Browser | done; ambient computed, not drawn (notes/runtime.md) |
+| Screens | App/UI | done (notes/ui.md) |
+| End-to-end test | fixtures/e2e.py | in CI: 191 ported, 24 new, 28 skipped (notes/e2e.md) |
+| Packaging and releases | | done: extension.yml, extension-release.yml, release.sh sets the version |
 
 ## Distribution
 
