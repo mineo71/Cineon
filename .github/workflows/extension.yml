@@ -1,0 +1,107 @@
+name: extension
+
+# The browser extension: unit tests, type checks, the release build (checked for leftover debug
+# hooks), Firefox's linter, then the end-to-end test in a real Chromium with the development build
+# against the fake streaming site. See extension/notes/e2e.md.
+
+on:
+  push:
+    paths:
+      - "extension/**"
+      - "fixtures/**"
+      - "Cineon/Resources/Scripts/**"
+      - ".github/workflows/extension.yml"
+  workflow_dispatch:
+    inputs:
+      e2e_only:
+        description: "End-to-end sections to run, such as autopilot,rescue (empty runs all; 'none' skips the end-to-end test)"
+        required: false
+        default: ""
+
+concurrency:
+  group: extension-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Install
+        run: npm ci --legacy-peer-deps
+
+      - name: Unit tests
+        run: npx vitest run
+
+      - name: Type check
+        run: |
+          npx tsc --noEmit -p .
+          npx tsc --noEmit -p e2e
+
+      - name: Release build and packages
+        run: node scripts/build.mjs --package
+
+      - name: No debug hooks in the release build
+        run: |
+          if grep -rl -e cineonDebug -e __DEV__ dist/; then
+            echo "::error::The release build contains debug hooks (files above)"
+            exit 1
+          fi
+          echo "dist/ has no cineonDebug or __DEV__"
+
+      - name: Firefox lint
+        run: npx --yes web-ext@10.8.0 lint --source-dir dist/firefox --self-hosted
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension-packages
+          path: extension/packages/*.zip
+          if-no-files-found: error
+
+      - name: Development build
+        if: ${{ inputs.e2e_only != 'none' }}
+        run: node scripts/build.mjs --dev
+
+      - name: Chromium, ffmpeg and a display
+        if: ${{ inputs.e2e_only != 'none' }}
+        run: |
+          npx playwright install --with-deps chromium
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg xvfb
+
+      - name: Fixture media
+        if: ${{ inputs.e2e_only != 'none' }}
+        working-directory: .
+        run: make fixtures/film.mp4 fixtures/hls/index.m3u8
+
+      - name: End-to-end
+        if: ${{ inputs.e2e_only != 'none' }}
+        env:
+          CI: "1"
+          CINEON_E2E_ONLY: ${{ inputs.e2e_only }}
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && inputs.e2e_only != 'none' }}
+        with:
+          name: extension-e2e-report
+          path: extension/playwright-report/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && inputs.e2e_only != 'none' }}
+        with:
+          name: extension-e2e-results
+          path: extension/test-results/
+          if-no-files-found: ignore

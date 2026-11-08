@@ -8,12 +8,14 @@
     "build": "node scripts/build.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p .",
-    "e2e": "node scripts/build.mjs && playwright test",
+    "e2e": "node scripts/build.mjs --dev && playwright test",
     "package": "node scripts/build.mjs --package"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.0",
     "@testing-library/preact": "^3.2.4",
     "@types/chrome": "0.3.7",
+    "@types/node": "^22.20.5",
     "esbuild": "0.28.2",
     "fake-indexeddb": "6.2.7",
     "jsdom": "^25.0.1",

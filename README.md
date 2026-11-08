@@ -51,6 +51,31 @@ The Windows app is a 1:1 port of the Mac app: same screens and features, and the
 so a profile folder copied from a Mac opens on Windows. What differs is listed in
 `windows/notes/*.md`; how it's built is in `windows/PLAN.md`.
 
+## Install the browser extension
+
+The same Cineon inside Chrome, Edge or Firefox (`extension/`), using the browser's own tabs and
+sharing the Together and cloud server with the apps. It isn't in the browsers' stores yet, so it's
+installed from the zips on each release.
+
+**Chrome or Edge**
+
+1. Download `Cineon-extension-x.y.z-chrome.zip` from the
+   [latest release](https://github.com/mineo71/Cineon/releases/latest) and unzip it into a folder
+   you'll keep (the browser loads it from there).
+2. Open `chrome://extensions` (Edge: `edge://extensions`) and turn on **Developer mode**.
+3. Click **Load unpacked** and choose the unzipped folder. Pin Cineon from the puzzle-piece menu.
+
+To update, unzip the new release over the same folder and click the reload arrow on Cineon's card.
+Your library stays: it lives in the browser's profile, not in the folder. The browser may remind you
+on start that a developer-mode extension is on; that's expected for an unpacked extension.
+
+**Firefox**
+
+Until Cineon is signed by Mozilla (AMO), which needs the owner's add-ons account, Firefox only runs
+it as a temporary add-on: download `Cineon-extension-x.y.z-firefox.zip`, open
+`about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and pick the zip. Firefox
+removes temporary add-ons when it quits, so this is for trying it, not for every day.
+
 ## Build
 
 Requires Xcode and XcodeGen (`brew install xcodegen`).
