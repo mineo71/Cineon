@@ -23,8 +23,9 @@ import { type PartFolder } from "./partStore";
 export interface HlsOutcome {
   /** The joined file's name in the staging folder. */
   readonly file: string;
-  readonly extension: "ts" | "mp4";
-  /** Seconds, from the playlist. */
+  /** `ts` or `mp4` for a stream; a plain file's own (mp4, m4v, mov, webm, mkv). */
+  readonly extension: string;
+  /** Seconds, from the playlist (0 for a plain file). */
   readonly duration: number;
   readonly size: number;
 }
@@ -54,6 +55,8 @@ export class HlsDownloader {
   attempts = 4;
   /** Milliseconds before the first retry, doubled for each one after. */
   retryDelay = 1000;
+  /** Bytes per request for a plain file. */
+  fileChunk = 8 * 1024 * 1024;
 
   static readonly outputFile = OUTPUT_FILE;
 
@@ -96,7 +99,45 @@ export class HlsDownloader {
       throw new DownloadFailedError(DownloadErrors.protected);
     }
     await prepare?.(addressesOf(segments));
+    const extension = HlsMediaPlaylist.isFragmentedMp4(playlist) ? "mp4" : "ts";
+    return this.fetchAndJoin(segments, staging, options, extension, HlsMediaPlaylist.totalDuration(playlist));
+  }
 
+  /**
+   * A plain file (a progressive MP4, WebM…), fetched by the extension the way a stream is: in byte
+   * ranges a few at a time, kept in the staging folder so a retry carries on, then joined. Chrome's own
+   * downloads can't carry the page's Referer, which some sites insist on. A server that ignores Range
+   * gets one request for the whole file.
+   */
+  async downloadFile(url: string, extension: string, staging: PartFolder, options: HlsDownloadOptions = {}): Promise<HlsOutcome> {
+    const { progress, signal, prepare } = options;
+    const finished = await readDone(staging);
+    if (finished != null) {
+      progress?.(1);
+      return finished;
+    }
+    await prepare?.([url]);
+    const { size, ranges } = await this.withRetries(() => this.http.probe(url, signal), signal);
+    const segments: HlsSegment[] = [];
+    if (ranges && size != null && size > 0) {
+      for (let offset = 0, i = 0; offset < size; offset += this.fileChunk, i++) {
+        segments.push({ url, duration: 0, sequence: i, key: null, map: null, range: { offset, length: Math.min(this.fileChunk, size - offset) } });
+      }
+    } else {
+      segments.push({ url, duration: 0, sequence: 0, key: null, map: null, range: null });
+    }
+    return this.fetchAndJoin(segments, staging, options, extension, 0);
+  }
+
+  /** Fetches what isn't in the staging folder yet, joins it all in order, and marks it whole. */
+  private async fetchAndJoin(
+    segments: readonly HlsSegment[],
+    staging: PartFolder,
+    options: HlsDownloadOptions,
+    extension: string,
+    total: number,
+  ): Promise<HlsOutcome> {
+    const { progress, signal } = options;
     await keepOnlyIfSameStream(staging, segments);
 
     const keys = new Map<string, Promise<CryptoKey>>();
@@ -112,7 +153,6 @@ export class HlsDownloader {
       return task;
     };
 
-    const total = HlsMediaPlaylist.totalDuration(playlist);
     const weight = (s: HlsSegment) => (total > 0 ? s.duration : 1);
     const whole = total > 0 ? total : segments.length;
     let done = 0;
@@ -189,7 +229,7 @@ export class HlsDownloader {
     const size = await staging.join(OUTPUT_FILE, order, signal);
     const outcome: HlsOutcome = {
       file: OUTPUT_FILE,
-      extension: HlsMediaPlaylist.isFragmentedMp4(playlist) ? "mp4" : "ts",
+      extension,
       duration: total,
       size,
     };
@@ -269,7 +309,7 @@ async function readDone(staging: PartFolder): Promise<HlsOutcome | null> {
   if (text == null) return null;
   try {
     const done = JSON.parse(text) as HlsOutcome;
-    if ((done.extension !== "ts" && done.extension !== "mp4") || typeof done.size !== "number") return null;
+    if (typeof done.extension !== "string" || !/^[a-z0-9]{1,5}$/.test(done.extension) || typeof done.size !== "number") return null;
     return (await staging.size(OUTPUT_FILE)) === done.size ? done : null;
   } catch {
     return null;

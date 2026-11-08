@@ -5,7 +5,7 @@
 
 import { DownloadErrors, DownloadFailedError } from "./errors";
 import { DownloadHttp, type FetchLike } from "./http";
-import { HlsDownloader } from "./hlsDownloader";
+import { HlsDownloader, type HlsDownloadOptions } from "./hlsDownloader";
 import { type ObjectUrls } from "./browser";
 import { type PartStore } from "./partStore";
 
@@ -13,6 +13,29 @@ import { type PartStore } from "./partStore";
 export interface StreamJob {
   readonly key: string;
   readonly url: string;
+  /** "file": a plain file fetched in parts (Chrome's own downloads can't carry the page's headers). */
+  readonly kind?: "hls" | "file";
+  /** A plain file's extension (mp4, webm…), for its name and media type. */
+  readonly extension?: string;
+}
+
+/**
+ * The joined file's media type. The OPFS file has none, and the browser reads an untyped blob as
+ * text: Chrome saved "Name.ts" as "Name.txt".
+ */
+export function joinedMediaType(extension: string): string {
+  switch (extension) {
+    case "ts":
+      return "video/mp2t";
+    case "webm":
+      return "video/webm";
+    case "mkv":
+      return "video/x-matroska";
+    case "mov":
+      return "video/quicktime";
+    default:
+      return "video/mp4";
+  }
 }
 
 export type StreamEvent =
@@ -22,7 +45,7 @@ export type StreamEvent =
       readonly type: "done";
       readonly key: string;
       readonly url: string;
-      readonly extension: "ts" | "mp4";
+      readonly extension: string;
       readonly duration: number;
       readonly size: number;
     }
@@ -71,6 +94,8 @@ export interface StreamHostOptions {
 interface Job {
   key: string;
   url: string;
+  kind: "hls" | "file";
+  extension: string;
   state: "running" | "done" | "failed";
   fraction: number;
   controller: AbortController;
@@ -113,6 +138,8 @@ export class StreamHost implements StreamWorker {
     const job: Job = {
       key: request.key,
       url: request.url,
+      kind: request.kind ?? "hls",
+      extension: request.extension ?? "mp4",
       state: "running",
       fraction: 0,
       controller: new AbortController(),
@@ -168,7 +195,7 @@ export class StreamHost implements StreamWorker {
     try {
       const folder = await (await this.parts()).folder(StreamHost.folderName(job.key), true);
       if (folder == null) throw new DownloadFailedError(DownloadErrors.couldNotSave("the browser's storage isn't available."));
-      const outcome = await this.hls.download(job.url, folder, {
+      const options: HlsDownloadOptions = {
         signal: job.controller.signal,
         prepare: async (urls) => {
           try {
@@ -184,11 +211,16 @@ export class StreamHost implements StreamWorker {
           lastReport = now;
           this.emit({ type: "progress", key: job.key, fraction });
         },
-      });
+      };
+      const outcome =
+        job.kind === "file"
+          ? await this.hls.downloadFile(job.url, job.extension, folder, options)
+          : await this.hls.download(job.url, folder, options);
       const file = await folder.file(outcome.file);
       if (file == null) throw new DownloadFailedError(DownloadErrors.couldNotSave("the joined file went missing."));
       if (job.controller.signal.aborted) throw new DOMException("Stopped", "AbortError");
-      const url = await this.options.objectUrls.create(file);
+      // A typed slice of the file (no copy), so the browser keeps the name's extension.
+      const url = await this.options.objectUrls.create(file.slice(0, file.size, joinedMediaType(outcome.extension)));
       const done = {
         type: "done" as const,
         key: job.key,

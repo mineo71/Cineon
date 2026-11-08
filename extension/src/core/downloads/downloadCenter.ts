@@ -39,7 +39,7 @@ import { DownloadErrors } from "./errors";
 import { sleep } from "./hlsDownloader";
 import { DownloadHttp, type FetchLike } from "./http";
 import { MediaUrls } from "./mediaUrls";
-import { type StreamEvent, type StreamWorker } from "./stream";
+import { type StreamEvent, type StreamJob, type StreamWorker } from "./stream";
 import { SubtitleTrack } from "./subtitles";
 import { DownloadText } from "./text";
 import { type DownloadHost, type DownloadTab } from "./types";
@@ -86,6 +86,14 @@ export interface DownloadCenterOptions {
   fetch?: FetchLike;
   /** How bytes become an address chrome.downloads can save (ObjectUrls.browser() by default). */
   objectUrls?: ObjectUrls;
+  /**
+   * Fetch direct files through the stream worker, as streams are, and hand the browser the joined file.
+   * Chrome: no declarativeNetRequest rule reaches a chrome.downloads request and the API refuses a
+   * Referer, so its own download of a file can't carry the page's Referer and Origin, and sites that
+   * check them refuse it. Off: chrome.downloads fetches the file (with the header rules, where the
+   * browser applies them to its downloads).
+   */
+  fetchFiles?: boolean;
 }
 
 interface Run {
@@ -194,7 +202,7 @@ export class DownloadCenter {
   private async reattach(item: DownloadItem, jobs: readonly { key: string; state: string; fraction: number }[]): Promise<boolean> {
     const browserId = this.links.get(item.id) ?? null;
     const browser = browserId != null ? await this.browserItem(browserId) : null;
-    if (item.kind === "hls") {
+    if (this.streamed(item)) {
       const key = this.streamKey(item.id);
       const job = jobs.find((j) => j.key === key);
       const handingOff = browser != null && browser.state !== "interrupted";
@@ -207,7 +215,7 @@ export class DownloadCenter {
       } else {
         this._progress.set(item.id, job!.fraction);
         // A job that ended while nobody listened says so again.
-        if (job!.state !== "running") this.track(this.options.streams.start({ key, url: item.sourceUrl }).catch(() => {}));
+        if (job!.state !== "running") this.track(this.options.streams.start(this.streamJob(item)).catch(() => {}));
       }
       return true;
     }
@@ -513,7 +521,7 @@ export class DownloadCenter {
     this.forgetLink(id);
     const work = (async () => {
       await this.deleteFiles(current, browserId);
-      if (item.kind === "hls") await this.options.streams.discard(this.streamKey(id)).catch(() => {});
+      if (this.streamed(item)) await this.options.streams.discard(this.streamKey(id)).catch(() => {});
       await this.options.headers.remove(this.fileKey(id)).catch(() => {});
       await this.options.headers.remove(this.streamKey(id)).catch(() => {});
       await this.writes;
@@ -589,8 +597,8 @@ export class DownloadCenter {
     const item: DownloadItem = { ...current, status: "downloading" };
     this.save(item);
     const run: Run = {
-      kind: item.kind === "hls" ? "stream" : "file",
-      key: item.kind === "hls" ? this.streamKey(id) : this.fileKey(id),
+      kind: this.streamed(item) ? "stream" : "file",
+      key: this.streamed(item) ? this.streamKey(id) : this.fileKey(id),
       browserId: null,
       target: null,
       handoff: false,
@@ -675,7 +683,7 @@ export class DownloadCenter {
         if (browser != null) await this.discardBrowserDownload(known);
         this.forgetLink(item.id);
       }
-      await streams.start({ key: run.key, url: item.sourceUrl });
+      await streams.start(this.streamJob(item));
     } catch (error) {
       if (this.runs.get(item.id) === run) this.failRun(item.id, DownloadErrors.describe(error));
     }
@@ -1035,6 +1043,18 @@ export class DownloadCenter {
 
   private fileKey(id: number): string {
     return `file-${this.partialKey}-${id}`;
+  }
+
+  /** Saved through the stream worker: every stream, and in Chrome every direct file (`fetchFiles`). */
+  private streamed(item: DownloadItem): boolean {
+    return item.kind === "hls" || this.options.fetchFiles === true;
+  }
+
+  private streamJob(item: DownloadItem): StreamJob {
+    const key = this.streamKey(item.id);
+    return item.kind === "hls"
+      ? { key, url: item.sourceUrl }
+      : { key, url: item.sourceUrl, kind: "file", extension: DownloadCenter.extension(null, item.sourceUrl) };
   }
 
   /** Also the stream's OPFS folder: `cineon-partial/<key>.hls`. */

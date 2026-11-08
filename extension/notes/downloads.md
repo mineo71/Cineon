@@ -10,7 +10,11 @@ declarativeNetRequest, OPFS, object URLs and runtime messaging (`test/downloads/
 ## How it fits together
 ```
 DownloadCenter (service worker / Firefox event page)
- ├─ direct file ─► DnrHeaderRules.add(Referer/Origin for the file's URL and site, tab-less requests only)
+ ├─ direct file ─► Chrome (fetchFiles): as a stream below, StreamWorker.start({key, url, kind: "file", extension}):
+ │                   the file fetched in 8 MiB ranges (one request if the server ignores Range) with the
+ │                   page's headers, joined in OPFS, handed over as a typed blob. Chrome's downloads can't
+ │                   carry a Referer (see Headers).
+ │                 Firefox: DnrHeaderRules.add(Referer/Origin for the file's URL and site, tab-less requests only)
  │                 chrome.downloads.download({url, filename: "Cineon/<name>.<ext>", conflictAction: "uniquify"})
  │                 progress: downloads.search({id}) every pollInterval + onChanged; Stop = pause, Try again = resume
  ├─ HLS ─────────► StreamWorker.start({key, url})
@@ -151,14 +155,22 @@ Other: `DownloadErrors` (`explain(status)`, `describe(error)`, `interruption(rea
   resumes from its OPFS parts on Try again. Keep the page alive while a stream runs (e.g. an open
   `runtime.Port` from the Downloads page, or periodic extension API calls).
 - **Headers**: `DnrHeaderRules` uses session rules with `tabIds: [-1]` (requests from no tab: the
-  worker, the offscreen document, chrome.downloads) in IDs 1,000,000–1,009,999 (no other code may use
-  that range). Each download gets a priority-2 rule for its exact URL and a priority-1 rule for its
-  sites (registrable domains, so redirects and segment hosts on the same site are covered); Referer is
-  set or removed, Origin set (cross-site, as the apps) or removed (so the extension's own
-  `chrome-extension://` Origin never reaches the site). Rules go when the download ends. Verify in
-  the e2e run that Firefox's DNR applies to the extension's own requests; if it doesn't, implement
-  `HeaderRules` with blocking `webRequest.onBeforeSendHeaders` (needs `webRequestBlocking` in the
-  Firefox manifest).
+  worker, the offscreen document) in IDs 1,000,000–1,009,999 (no other code may use that range). Each
+  download gets a priority-2 rule for its exact URL and a priority-1 rule for its sites (registrable
+  domains, so redirects and segment hosts on the same site are covered); Referer is set or removed,
+  Origin set (cross-site, as the apps) or removed (so the extension's own `chrome-extension://` Origin
+  never reaches the site). Rules go when the download ends.
+  **Chrome's downloads don't get them.** Checked in Chrome for Testing 156 (end-to-end, a logging
+  server): no declarativeNetRequest rule, whatever its condition (`tabIds: [-1]`, any `resourceTypes`
+  including `main_frame` and `other`, `requestDomains`, or none at all), touches a
+  `chrome.downloads.download` request, webRequest doesn't see it either, and the API's own `headers`
+  option refuses `Referer` ("Unsafe request header name"). The browser's own cookies do go. So a site
+  that checks the Referer (HDRezka's CDN) refused every direct download with 403. In Chrome the center
+  therefore fetches direct files itself (`fetchFiles`), where the rules apply, as it fetches streams.
+  Firefox still uses its downloads with the rules: verify there that its DNR applies to the
+  extension's own requests and to `downloads.download`; if not, implement `HeaderRules` with blocking
+  `webRequest.onBeforeSendHeaders` (needs `webRequestBlocking` in the Firefox manifest) or set
+  `fetchFiles` there too.
 - **Cookies and browser name**: chrome.downloads and `fetch(..., {credentials: "include"})` send the
   browser's own cookies and User-Agent, so the C# `IRequestContext` (cookie filtering, UA) is gone.
 - **OPFS**: `navigator.storage.getDirectory()` in the offscreen document (Chrome) and the background
@@ -173,7 +185,13 @@ Other: `DownloadErrors` (`explain(status)`, `describe(error)`, `interruption(rea
 - **Extension of a direct file**: decided before the response arrives (chrome.downloads takes the name
   up front), so it comes from the address (mp4, m4v, mov, webm, mkv; else mp4). The apps also read
   Content-Disposition and Content-Type.
-- **Stop / Try again**: Stop pauses the browser's download; Try again resumes it (the browser sends
+- **Direct files in Chrome go through OPFS** (see Headers): fetched in 8 MiB ranges, four at a time,
+  kept as parts so Stop and Try again carry on from them, joined, and handed to `chrome.downloads` as
+  a blob typed by extension (`video/mp4`, `video/webm`…). A server that ignores Range is fetched in
+  one request, held in memory until written. The browser's download list shows the file only once
+  it's handed over; Cineon's Downloads shows the progress. Every joined file, stream or not, gets a
+  media type: Chrome saved an untyped blob asked for as `Name.ts` as `Name.txt`.
+- **Stop / Try again** (Firefox's direct files): Stop pauses the browser's download; Try again resumes it (the browser sends
   Range and starts over if the site ignores it); a download that can't resume (cancelled in the
   browser's list, a server error) starts afresh. After a browser restart Chrome's own interrupted
   downloads resume the same way. Streams keep their segments in OPFS, so Try again carries on even

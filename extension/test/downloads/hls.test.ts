@@ -276,6 +276,29 @@ describe("HLS downloads", () => {
     expect(rig.browser.file(saved.file!)).toEqual(concat([init, segments[0]!, segments[1]!]));
   });
 
+  test("the joined stream goes to the browser as video, so it keeps its .ts or .mp4 name", async () => {
+    // The OPFS file has no type. Chrome reads an untyped blob as text/plain and then saves
+    // "Arrival.ts" as "Arrival.txt" (seen in the end-to-end test).
+    const types: string[] = [];
+    const create = rig.objectUrls.create.bind(rig.objectUrls);
+    rig.objectUrls.create = async (blob: Blob) => {
+      types.push(blob.type);
+      return create(blob);
+    };
+    server().text("/hls/720/index.m3u8", mediaPlaylist());
+    serveSegments("720");
+    const ts = await rig.enqueue("https://cdn.test/hls/720/index.m3u8", { kind: "hls" });
+    await center().idle();
+    expect(rig.browser.file(center().item(ts.id)!.file!)).toEqual(joined);
+
+    server().bytes("/f/init.mp4", FakeServer.random(300, 50));
+    server().text("/f/index.m3u8", '#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI="init.mp4"\n#EXTINF:6,\nseg-1.m4s\n#EXT-X-ENDLIST\n');
+    server().bytes("/f/seg-1.m4s", segments[0]!);
+    await rig.enqueue("https://cdn.test/f/index.m3u8", { kind: "hls" });
+    await center().idle();
+    expect(types).toEqual(["video/mp2t", "video/mp4"]);
+  });
+
   test("byte ranges are cut from one file", async () => {
     server().bytes("/r/all.ts", joined, "video/mp2t");
     const lines = ["#EXTM3U", "#EXT-X-TARGETDURATION:6", "#EXT-X-VERSION:4"];

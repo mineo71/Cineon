@@ -64,6 +64,9 @@ const runtime = new Runtime({
     streams,
     // Chrome's worker has no object URLs; subtitles go through data: URLs (streams use the offscreen document's).
     objectUrls: target === "chrome" ? ObjectUrls.data() : ObjectUrls.browser(),
+    // Chrome's downloads never get the header rules (nor may they carry a Referer), so the offscreen
+    // document fetches direct files with them, as it does streams. Firefox: unverified, see notes/downloads.md.
+    fetchFiles: target === "chrome",
     async open(id) {
       try {
         await Promise.resolve(chrome.downloads.open(id) as unknown);
