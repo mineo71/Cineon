@@ -200,6 +200,7 @@ export class WatchTracker {
       startedWith: row.watchedSeconds + alreadyPlayed,
       finishedAnnounced: false,
     };
+    this.ctx.browser.noteWatched(tab);
     await this.writeFlush(tab, event.position, event.duration);
     if (tab.track) await this.ctx.autopilot.trackBegan(tab, tab.track);
   }

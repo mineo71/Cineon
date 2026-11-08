@@ -609,6 +609,7 @@ export class Browser {
       if (!tab.isHelper && !tab.isProbe) {
         this.applyCaptions(tab);
         if (event.type === "play" || isNewFrame) this.applyVoiceBoost(tab);
+        if (isNewFrame) this.syncRedirectShield(tab);
       }
     }
     if (tab.isHelper || tab.isProbe) return Promise.resolve();
@@ -628,6 +629,7 @@ export class Browser {
     if (tab.isHelper || tab.isProbe) return;
     if (meta.icon) tab.favIconUrl = meta.icon;
     detach(this.learnFromPage(meta, tab));
+    this.syncRedirectShield(tab);
   }
 
   receiveShield(tab: TabState, body: unknown): void {
@@ -669,6 +671,17 @@ export class Browser {
     this.changed(tab);
   }
 
+  /**
+   * A page whose film has started being watched joins the history. `urlChanged` runs before tracking can
+   * begin, so without this a film page off the person's sites never got in, and rescue (which looks for a
+   * dead site's other addresses among the hosts the profile has seen) lost every address it had only
+   * watched on: watching the same film elsewhere soon after carries on that session under the new host.
+   */
+  noteWatched(tab: TabState): void {
+    if (tab.isHelper || tab.isProbe || !tab.url) return;
+    detach(this.noteHistory(tab, tab.url));
+  }
+
   /** The person's browsing, for the timeline: only on their sites and pages that had a film. */
   private async noteHistory(tab: TabState, url: string): Promise<void> {
     if (!this.settings.saveBrowsingHistory || !isWebUrl(url)) return;
@@ -693,6 +706,7 @@ export class Browser {
     const wasShielded = this.isShielded(tab);
     tab.documentId = documentId;
     tab.trustedNavigation = false;
+    tab.redirectShieldSent = null;
     tab.failure = null;
     if (!(tab.rescue && RescueReasonOpensBySelf(tab.rescue.reason) && tab.rescue.stage !== "finished")) this.ctx.rescue.stop(tab);
     if (!this.wantsAutoplay(tab, url)) tab.autoplayKey = null;
@@ -789,8 +803,40 @@ export class Browser {
   }
 
   /**
+   * What the top frame needs to stop a script sending it to another site before it leaves (the Mac's
+   * redirect shield; content/redirectShield.ts): on for pages Cineon has a stake in, with the setting
+   * on and redirects not allowed for the site. `knownDocument` false (a page saying hello before the
+   * tab's state is about it) counts only the person's sites, so a sign-in page that follows a film in
+   * the same tab isn't held to the film's rule.
+   */
+  redirectShieldFor(tab: TabState, knownDocument = true): { redirectShield: boolean; site: string } {
+    const host = hostOf(tab.url) ?? "";
+    const prefs = this.ctx.shields.prefsFor(host);
+    const stake = knownDocument ? this.isShielded(tab) : this.ctx.library.siteForHost(host) != null;
+    const on = isWebUrl(tab.url) && this.settings.redirectShield && !prefs.shieldsOff && !prefs.allowRedirects && stake;
+    return { redirectShield: on, site: on ? DomainName.registrable(host) : "" };
+  }
+
+  /** Tells the top frame when that changes (the page turned out to be a film, or a video appeared). */
+  syncRedirectShield(tab: TabState): void {
+    if (tab.isHelper || tab.isProbe || !isWebUrl(tab.url)) return;
+    const want = this.redirectShieldFor(tab);
+    if (tab.redirectShieldSent === want.redirectShield) return;
+    tab.redirectShieldSent = want.redirectShield;
+    detach(this.platform.page.call(tab.id, 0, "__cineonContent", "redirectShield", [want.redirectShield, want.site]));
+  }
+
+  /** The page stopped a script sending it to `target` before it left: counted, with Allow. */
+  redirectStoppedInPage(tab: TabState, target: string): void {
+    if (tab.isHelper || tab.isProbe) return;
+    this.blockRedirect(tab, hostOf(tab.url), target, false);
+  }
+
+  /**
    * The redirect shield, after the fact: a script sent the page to another site without the person
    * asking (WebKit's `.other` navigation). The browser has already committed it, so the tab goes back.
+   * Pages with the Navigation API stop it before it leaves (above); this is for the rest, and for a
+   * page whose stake wasn't known yet.
    */
   private checkRedirect(tab: TabState, from: string | null, to: string, transition: { type: string; qualifiers: readonly string[] }): void {
     if (!transition.qualifiers.includes("client_redirect") || transition.qualifiers.includes("forward_back")) return;

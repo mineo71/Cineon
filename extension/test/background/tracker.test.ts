@@ -35,6 +35,31 @@ describe("WatchTracker", () => {
     expect(h.pages.of("library").length).toBeGreaterThan(0);
   });
 
+  test("a film page goes into the history once it's watched, so its host stays known after the film moves on", async () => {
+    // Rescue finds a dead site's other addresses among the hosts the profile has seen (Database.knownHosts).
+    // Watching the same film on a second address within the merge window carries on the first session and
+    // takes its host, so the first address is remembered only if the page itself went into the history.
+    const h = await makeHarness();
+    const other = "https://kino-two.example/watch/dune-2021";
+    await openTab(h, 1, FILM);
+    await fromPage(h, 1, "cineonMeta", filmMeta());
+    await play(h, 1, 100, 24, 9000);
+    const session = h.runtime.current!;
+    expect(session.browser.tab(1)!.track).not.toBeNull();
+    await fromPage(h, 1, "cineonMedia", media("pause", 124, 9000));
+
+    await openTab(h, 2, other, { active: true });
+    session.browser.tab(1)!.active = false;
+    await fromPage(h, 2, "cineonMeta", filmMeta(other));
+    await play(h, 2, 124, 24, 9000);
+    expect(session.browser.tab(2)!.track).not.toBeNull();
+    await fromPage(h, 2, "cineonMedia", media("pause", 148, 9000));
+    await settle();
+
+    expect((await session.db.recentHistory()).map((e) => e.url)).toEqual(expect.arrayContaining([FILM, other]));
+    expect(await session.db.knownHosts()).toEqual(expect.arrayContaining(["kino.example", "kino-two.example"]));
+  });
+
   test("resumes where the film was left, with a Start over button in the player's banner", async () => {
     const h = await makeHarness();
     await openTab(h, 1, FILM);

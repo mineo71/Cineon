@@ -5,6 +5,7 @@
 // when the background must stay awake (Firefox), and offers `window.__cineonContent`.
 
 import { contentHelpers } from "./helpers";
+import { installRedirectShield } from "./redirectShield";
 import { installIsolatedRelay } from "./shieldRelay";
 import { installHandlers, type PageMessage } from "./shim";
 
@@ -56,21 +57,38 @@ export function startIsolated(scripts: PageScriptRunners, runtime: ContentRuntim
     void safeSend(runtime, message);
   });
 
-  scope.__cineonContent = contentHelpers(scripts.theater, win);
+  // The redirect shield (top frame): the page's site while the background says its redirects are
+  // shielded. Set by hello's answer, a config push, or the background's call once the page turns
+  // out to be a film.
+  let redirectSite: string | null = null;
+  const setRedirectShield = (on: unknown, site: unknown) => {
+    if (isTop && typeof on === "boolean") redirectSite = on && typeof site === "string" && site.length > 0 ? site : null;
+  };
+  if (isTop) installRedirectShield(win, () => redirectSite, (url) => void safeSend(runtime, { cineon: "redirect", url }));
+
+  scope.__cineonContent = {
+    ...contentHelpers(scripts.theater, win),
+    redirectShield(on: boolean, site: string): boolean {
+      setRedirectShield(on, site);
+      return redirectSite != null;
+    },
+  };
 
   // What the background wants this frame to know, and its element-hiding CSS (inserted by it).
   void safeSend(runtime, { cineon: "hello", top: isTop, url: win.location.href }).then((config) => {
-    const c = config as { noShield?: unknown } | null;
+    const c = config as { noShield?: unknown; redirectShield?: unknown; site?: unknown } | null;
     if (c && typeof c.noShield === "boolean") setNoShield(doc, c.noShield);
+    if (c) setRedirectShield(c.redirectShield, c.site);
   });
 
   let port: { postMessage(message: unknown): void; disconnect(): void } | null = null;
   let pinger: ReturnType<typeof setInterval> | null = null;
   try {
     runtime.onMessage.addListener((message) => {
-      const m = message as { cineon?: unknown; noShield?: unknown; on?: unknown } | null;
+      const m = message as { cineon?: unknown; noShield?: unknown; on?: unknown; redirectShield?: unknown; site?: unknown } | null;
       if (!m || typeof m !== "object") return;
       if (m.cineon === "config" && typeof m.noShield === "boolean") setNoShield(doc, m.noShield);
+      if (m.cineon === "config") setRedirectShield(m.redirectShield, m.site);
       if (m.cineon === "keepalive" && isTop) {
         if (m.on === true && !port) {
           try {
