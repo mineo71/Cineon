@@ -212,8 +212,16 @@ export class FakeNetwork {
   };
 
   /** A request from chrome.downloads (no tab, no Origin). */
+  /**
+   * Whether the extension's session rules reach what chrome.downloads asks for. In Chrome they don't:
+   * no declarativeNetRequest rule, whatever its condition, touches a downloads-API request (checked in
+   * Chrome for Testing 156, end-to-end), and the API refuses a Referer header of its own. True here
+   * models a browser where they do; the center's tests of the browser-download path (Firefox's) use it.
+   */
+  rulesReachDownloads = true;
+
   download(url: string, headers: Record<string, string>, signal: AbortSignal): Promise<FakeResponse> {
-    const sent = this.dnr.apply(url, headers, -1);
+    const sent = this.rulesReachDownloads ? this.dnr.apply(url, headers, -1) : { ...headers };
     return abortable(this.server.respond({ url, path: pathOf(url), headers: sent, from: "download" }), signal);
   }
 }
@@ -711,8 +719,13 @@ export class DownloadRig {
   center!: DownloadCenter;
   private readonly centers: DownloadCenter[] = [];
 
-  static async make(options: { session?: boolean } = {}): Promise<DownloadRig> {
+  /** Chrome: its downloads never get the session rules, so the center fetches direct files itself. */
+  chrome = false;
+
+  static async make(options: { session?: boolean; chrome?: boolean } = {}): Promise<DownloadRig> {
     const rig = new DownloadRig();
+    rig.chrome = options.chrome ?? false;
+    rig.network.rulesReachDownloads = !rig.chrome;
     rig.db = await freshDatabase();
     rig.library = await LibraryStore.open(rig.db);
     rig.streams.hls.retryDelay = 1;
@@ -733,6 +746,7 @@ export class DownloadRig {
       session: options.session ? this.session : undefined,
       fetch: this.network.fetch,
       objectUrls: this.objectUrls,
+      fetchFiles: this.chrome,
     });
     center.pollInterval = 20;
     this.centers.push(center);

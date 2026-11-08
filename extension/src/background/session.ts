@@ -60,6 +60,8 @@ export interface DownloadServices {
   readonly headers: HeaderRules;
   readonly streams: StreamWorker;
   readonly objectUrls?: ObjectUrls;
+  /** Fetch direct files as streams are (Chrome: its downloads can't carry the page's Referer). See DownloadCenterOptions. */
+  readonly fetchFiles?: boolean;
   /** chrome.downloads.open; false when the browser refused. */
   open(downloadId: number): Promise<boolean>;
   /** chrome.downloads.show. */
@@ -309,6 +311,7 @@ export class ProfileSession implements SessionContext {
           storage: services.local,
           session: services.session ?? undefined,
           objectUrls: services.downloads.objectUrls,
+          fetchFiles: services.downloads.fetchFiles,
         });
         this.seasons = await SeasonGrabber.open({ downloads: this.downloads, host: this.downloadHost(), resolver: this.resolver, storage: services.local });
         this.unsubscribers.push(this.downloads.changed.on(() => this.downloadsChanged()));

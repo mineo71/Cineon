@@ -83,6 +83,33 @@ describe("the isolated world", () => {
     expect(sent).toContainEqual(expect.objectContaining({ cineon: 1, h: "cineonMedia", b: { type: "play" } }));
   });
 
+  test("the top frame stops script redirects as the background says, and reports them", async () => {
+    // A window of its own: the shared one has already started its isolated world.
+    const module = "jsdom";
+    const { JSDOM } = (await import(module)) as { JSDOM: new (html: string, options: { url: string }) => { window: unknown } };
+    const win = new JSDOM("<!doctype html><p>film</p>", { url: "https://flixdemo.example/watch/1" }).window as Window;
+    const navigation = new (win as unknown as { EventTarget: typeof EventTarget }).EventTarget();
+    (win as unknown as { navigation: EventTarget }).navigation = navigation;
+    const navigate = (url: string) => {
+      const event = new Event("navigate", { cancelable: true });
+      Object.assign(event, { destination: { url, sameDocument: false }, navigationType: "push", userInitiated: false });
+      navigation.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    const { runtime, sent, deliver } = fakeRuntime((m) =>
+      (m as { cineon?: string }).cineon === "hello" ? { noShield: false, redirectShield: true, site: "flixdemo.example" } : null,
+    );
+    startIsolated({ media: () => undefined, meta: () => undefined, theater: () => undefined }, runtime, win);
+    await tick();
+    expect(navigate("http://ads.example.test/landing")).toBe(true);
+    expect(sent).toContainEqual({ cineon: "redirect", url: "http://ads.example.test/landing" });
+    deliver({ cineon: "config", noShield: false, redirectShield: false, site: "" });
+    expect(navigate("http://ads.example.test/landing")).toBe(false);
+    // The background's call once the page turns out to be a film.
+    (win as unknown as { __cineonContent: { redirectShield(on: boolean, site: string): boolean } }).__cineonContent.redirectShield(true, "flixdemo.example");
+    expect(navigate("http://ads.example.test/landing")).toBe(true);
+  });
+
   test("follows the background's config and holds a port while asked to", async () => {
     vi.useFakeTimers();
     try {

@@ -78,7 +78,19 @@ jobs:
         run: |
           npx playwright install --with-deps chromium
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg xvfb
+          sudo apt-get install -y -qq ffmpeg xvfb pulseaudio
+
+      # The runner has no sound card: Chrome's audio output fails (ALSA "PcmOpen: default"), and a film
+      # playing with sound stalls, which the voice boost and the sleep timer's fade need. A PulseAudio
+      # null sink stands in for speakers, as on a person's computer.
+      - name: A sound card for the browser
+        if: ${{ inputs.e2e_only != 'none' }}
+        continue-on-error: true
+        run: |
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=cineon_e2e
+          pactl set-default-sink cineon_e2e
+          pactl info | grep -i "default sink"
 
       - name: Fixture media
         if: ${{ inputs.e2e_only != 'none' }}

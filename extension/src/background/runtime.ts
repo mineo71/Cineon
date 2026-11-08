@@ -19,7 +19,9 @@ import { TabRegistry } from "./tabs";
 export type ContentMessage =
   | PageMessage
   | { cineon: "hello"; top: boolean; url: string }
-  | { cineon: "gesture"; link: { url: string; newTab: boolean } | null };
+  | { cineon: "gesture"; link: { url: string; newTab: boolean } | null }
+  /** The top frame stopped a script sending the page to `url` (content/redirectShield.ts). */
+  | { cineon: "redirect"; url: string };
 
 /** chrome.runtime.MessageSender, the parts used here (Chrome adds documentId and documentLifecycle). */
 export interface ContentSender {
@@ -166,7 +168,13 @@ export class Runtime {
   broadcastConfig(): void {
     for (const tab of this.registry.listed()) {
       if (!isWebUrl(tab.url)) continue;
-      detach(this.configFor(tab.url).then((config) => this.deps.sendToTab(tab.id, { cineon: "config", ...config })));
+      detach(
+        this.ready().then(async (session) => {
+          const config = { ...(await this.configFor(tab.url)), ...session.browser.redirectShieldFor(tab) };
+          tab.redirectShieldSent = config.redirectShield;
+          this.deps.sendToTab(tab.id, { cineon: "config", ...config });
+        }),
+      );
     }
   }
 
@@ -188,6 +196,7 @@ export class Runtime {
     if (m.cineon === 1) return this.pageMessage(message as PageMessage, sender, tabId);
     if (m.cineon === "hello") return this.hello(message as { top: boolean; url: string }, sender, tabId);
     if (m.cineon === "gesture") return this.gesture(message as { link: { url: string; newTab: boolean } | null }, tabId);
+    if (m.cineon === "redirect") return this.redirectStopped(message as { url?: unknown }, sender, tabId);
     return undefined;
   }
 
@@ -199,7 +208,25 @@ export class Runtime {
       const css = await session.shieldsCtl.cssFor(topUrl);
       if (css) detach(this.platform.page.insertCss(tabId, [sender.frameId ?? 0], css));
     }
-    return config;
+    if (!message.top || (sender.frameId ?? 0) !== 0) return config;
+    // The top frame also learns whether to stop scripts sending the page elsewhere. What the tab knows
+    // counts only if it's about this document (hello can come before the browser says it committed).
+    await this.registry.restore();
+    const tab = this.registry.ensure(tabId);
+    const known = sender.documentId != null && sender.documentId === tab.documentId;
+    const shield = session.browser.redirectShieldFor({ ...tab, url: message.url }, known);
+    tab.redirectShieldSent = known ? shield.redirectShield : null;
+    return { ...config, ...shield };
+  }
+
+  /** The top frame stopped a script sending the page to another site (content/redirectShield.ts). */
+  private async redirectStopped(message: { url?: unknown }, sender: ContentSender, tabId: number): Promise<unknown> {
+    if ((sender.frameId ?? 0) !== 0 || typeof message.url !== "string") return null;
+    if (sender.documentLifecycle && sender.documentLifecycle !== "active") return null;
+    const session = await this.ready();
+    const tab = this.registry.get(tabId);
+    if (tab) session.browser.redirectStoppedInPage(tab, message.url);
+    return null;
   }
 
   private async gesture(message: { link: { url: string; newTab: boolean } | null }, tabId: number): Promise<unknown> {

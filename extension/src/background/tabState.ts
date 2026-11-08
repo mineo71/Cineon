@@ -305,6 +305,8 @@ export interface TabState {
   lastHistoryKey: string | null;
   /** True while a navigation the person asked for is in flight (redirects included). */
   trustedNavigation: boolean;
+  /** What the top frame was last told: stop scripts sending this page to another site (null: not yet, this document). */
+  redirectShieldSent: boolean | null;
   /** The server said this page doesn't exist, though it sent something to show. */
   missingPageUrl: string | null;
   /** The banner media.js shows now, and when it goes (ms), for the toast routing and debug. */
@@ -363,6 +365,7 @@ export const TabState = {
       ambient: null,
       lastHistoryKey: null,
       trustedNavigation: false,
+      redirectShieldSent: null,
       missingPageUrl: null,
       banner: null,
       lastBannerForTests: null,

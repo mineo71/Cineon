@@ -32,11 +32,51 @@ describe("content messages", () => {
   test("hello tells a frame whether the overlay sweeper is on for its page", async () => {
     const h = await makeHarness();
     const sender = { tab: { id: 3, url: FILM }, frameId: 7, url: "https://player.example/embed" };
-    expect(await h.runtime.handleContent({ cineon: "hello", top: false, url: sender.url }, sender)).toEqual({ noShield: false });
+    expect(await h.runtime.handleContent({ cineon: "hello", top: false, url: sender.url }, sender)).toMatchObject({ noShield: false });
     await h.runtime.current!.shields.update("kino.example", { shieldsOff: true });
-    expect(await h.runtime.handleContent({ cineon: "hello", top: false, url: sender.url }, sender)).toEqual({ noShield: true });
+    expect(await h.runtime.handleContent({ cineon: "hello", top: false, url: sender.url }, sender)).toMatchObject({ noShield: true });
     await h.runtime.current!.updateSettings({ overlaySweeper: false });
-    expect(await h.runtime.handleContent({ cineon: "hello", top: true, url: "https://a.example/" }, { tab: { id: 4, url: "https://a.example/" }, frameId: 0 })).toEqual({ noShield: true });
+    expect(await h.runtime.handleContent({ cineon: "hello", top: true, url: "https://a.example/" }, { tab: { id: 4, url: "https://a.example/" }, frameId: 0 })).toMatchObject({ noShield: true });
+  });
+
+  test("hello tells the top frame of one of the person's sites to stop scripts sending it elsewhere", async () => {
+    const h = await makeHarness();
+    const session = h.runtime.current!;
+    await session.library.addSite("https://kino.example/", "Kino");
+    const top = { tab: { id: 5, url: FILM }, frameId: 0, url: FILM };
+    expect(await h.runtime.handleContent({ cineon: "hello", top: true, url: FILM }, top)).toEqual({ noShield: false, redirectShield: true, site: "kino.example" });
+    // Allowed for the site, shields off, or the setting off: not stopped.
+    await session.shields.update("kino.example", { allowRedirects: true });
+    expect(await h.runtime.handleContent({ cineon: "hello", top: true, url: FILM }, top)).toMatchObject({ redirectShield: false });
+    await session.shields.update("kino.example", { allowRedirects: false });
+    await session.updateSettings({ redirectShield: false });
+    expect(await h.runtime.handleContent({ cineon: "hello", top: true, url: FILM }, top)).toMatchObject({ redirectShield: false });
+    // A page on another site at hello time has no stake yet.
+    expect(await h.runtime.handleContent({ cineon: "hello", top: true, url: "https://mail.example/" }, { tab: { id: 6, url: "https://mail.example/" }, frameId: 0 })).toMatchObject({
+      redirectShield: false,
+    });
+  });
+
+  test("once a page turns out to be a film, its top frame is told to stop redirects too", async () => {
+    const h = await makeHarness();
+    await openTab(h, 1, FILM, { documentId: "a" });
+    await fromPage(h, 1, "cineonMeta", filmMeta);
+    expect(calls(h, 1, "redirectShield").at(-1)).toEqual([true, "kino.example"]);
+  });
+
+  test("a redirect the page stopped before leaving is counted, with Allow", async () => {
+    // The redirect to a dead ad host never commits, so the check after the fact can't see it.
+    const h = await makeHarness();
+    await openTab(h, 1, FILM, { documentId: "a" });
+    await fromPage(h, 1, "cineonMeta", filmMeta);
+    const tab = h.runtime.current!.browser.tab(1)!;
+    // From a frame inside the page: not the top page's own navigation.
+    await h.runtime.handleContent({ cineon: "redirect", url: "http://ads.example.test/landing" }, { tab: { id: 1, url: FILM }, frameId: 3, url: FILM });
+    expect(tab.blocked.redirects).toBe(0);
+    await h.runtime.handleContent({ cineon: "redirect", url: "http://ads.example.test/landing" }, { tab: { id: 1, url: FILM }, frameId: 0, url: FILM });
+    expect(tab.blocked.redirects).toBe(1);
+    expect(tab.lastBannerForTests).toBe("toast|Blocked redirect to ads.example.test|offer");
+    expect(tab.url).toBe(FILM);
   });
 
   test("a page's report from a new document counts as that page committing", async () => {

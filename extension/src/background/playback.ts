@@ -60,6 +60,11 @@ export interface PlaybackDeps {
 
 export class Playback {
   sleepTimer: SleepTimerState | null = null;
+  /**
+   * Whether the latest timer started its fade, kept after it ends: the fade can be over within a
+   * second (a player with no sound to fade), quicker than anyone asking about `isFading` can see.
+   */
+  lastTimerFaded = false;
   private stopTick: (() => void) | null = null;
   private holding = false;
   private lastAmbient = 0;
@@ -134,6 +139,7 @@ export class Playback {
       player.autopilot.isHeldForSleep = true;
     }
     this.sleepTimer = state;
+    this.lastTimerFaded = false;
     this.save();
     this.updateTicking();
     this.ctx.toasts.show(mode.kind === "endOfItem" ? "Playback stops at the end of this" : `Playback stops in ${SleepTimerMode.label(mode)}`, {
@@ -232,6 +238,7 @@ export class Playback {
     if (remaining <= FADE_SECONDS && !timer.isFading && player?.media?.isPlaying) {
       this.ctx.browser.fadeOut(player, Math.max(1, remaining));
       timer.isFading = true;
+      this.lastTimerFaded = true;
       this.save();
       return;
     }

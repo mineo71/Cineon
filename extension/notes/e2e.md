@@ -78,8 +78,8 @@ the step summary.
 
 ## Checks against e2e.py
 
-e2e.py has 219 checks (220 with "a film to rate", which only appears when adding a title fails).
-Ported: 191. Skipped with a printed reason: 28. New: 24.
+e2e.py has 220 checks (counting each of the route loop's four, and leaving out "a film to rate", which
+only appears when adding a title fails). Ported: 192. Skipped with a printed reason: 28. New: 24.
 
 Skipped (the reason is printed with each):
 
@@ -116,6 +116,12 @@ Ported, but checked another way (same name unless said):
 - "a subtitle file shows as a second line over the film": the page's player loads the subtitle file
   (an extension can't open one from disk), then `subs2 index=0`.
 - "Control Center shows what's playing": `nowplaying`, the tab whose media the browser's controls show.
+- "the sleep timer fades the sound out": the film is first made to play again (the media key, then the
+  video itself; e2e.py uses Siri) and its clock must move a second, so the check can't pass or fail on a
+  film that isn't playing; the fade counts if `sleepstate` says `fading=true` or `faded=true` (the
+  latest timer started its fade, kept after it ends, since a fade with no sound to fade can be over
+  between two looks). On the first Linux CI run the film had stalled with no sound card, the timer
+  simply ran out, and the check read as a missing fade.
 - Frames: "the frame is a file on disk" counts `frame_files` entries.
 - Downloads: "it's in the downloads folder" is `<browser downloads>/Cineon/`. "the stream saves as a
   package" (.movpkg) is **"the stream saves as one file"** here (.ts or .mp4, over 1 MB).
@@ -148,37 +154,43 @@ both themes (screenshots too).
   the bundled UI, and a coin-miner false positive from EasyPrivacy's host list); the end-to-end test is
   Chromium.
 
-## Ran locally (macOS, Chrome for Testing 156.0.8078.4, headed, 2026-11-08)
+## Runs (macOS, Chrome for Testing 156.0.8078.4, headed, 2026-11-08)
 
-Every section, in 11.5 minutes: **205 of 210 passed (28 skipped)** (6 more checks run when the direct
-download works: they only look at a finished file, as in e2e.py). The five failures are the
-extension's, not the test's, each reproduced on its own:
+**Now: 216 of 216 passed (28 skipped)**, every section, in 10 minutes.
 
-1. **[main] scripted redirect blocked, redirect counted.** The fixture redirects to
-   `ads.example.test`, which doesn't resolve. Chrome never commits a navigation that fails like that
-   (`webNavigation` gives `onBeforeNavigate` then `onErrorOccurred`, no `onCommitted`), and the
-   redirect shield only looks at commits (`Browser.didCommit` → `checkRedirect`), so the tab is left
-   on the browser's error page. A redirect to a host that answers would be caught; one that doesn't
-   (a dead ad network) isn't. Fix in the runtime: a main-frame `onErrorOccurred` right after an
-   untrusted navigation away from a shielded page is a blocked redirect too (go back, count it).
-2. **[downloads] the file downloads with the page's cookie and address.** The CDN answers only with
-   the page's cookie (`cdn_token`, set by the page) and a Referer under `/rezka/`; the download comes
-   back 403 ("The site refused…"). The page itself and the rest of the downloads work. Either the
-   `DnrHeaderRules` Referer rule doesn't reach `chrome.downloads` requests, or the SameSite=Lax cookie
-   isn't sent on an extension-initiated download; worth checking with `chrome.downloads` and the
-   rule's `resourceTypes`/`tabIds` in a real browser.
-3. **[downloads] the stream saves as one file.** The joined HLS stream (60 MB, complete) is saved as
-   `Cineon/Only Film.txt`: Chrome replaced the `.ts` the center asked for, likely from the blob's
-   type. Give the blob `video/mp2t` (or save as `.mp4`/`.m2ts`).
-4. **[rescue] a dead address moves to another address of the site.** With `flix-alive.localhost`
-   among the known hosts (`db.knownHosts()` returns it, the site probe says it's alive, and
-   `RescueMatcher.mirrors` returns it when called on its own), the live rescue still records
-   `mirrorsTotal: 0` and goes to the other site's search result instead. Something between
-   `begin`/`start` and `tryMirrors` loses the mirror; `tryMirrors`' `knownHosts().catch(() => [])` is
-   the first suspect.
+The first local run gave 205 of 210 and the first Linux CI run (42430935758) 204 of 210. The failures
+were four bugs in the extension, each reproduced on its own and fixed there (with a unit test), and one
+Linux-only observation:
+
+1. **Redirect shield missed dead targets** ("scripted redirect blocked", "redirect counted"). The
+   fixture redirects to `ads.example.test`, which doesn't resolve: Chrome fires `onBeforeNavigate` then
+   `onErrorOccurred` and never commits, and the shield only acted on commits (`didCommit` →
+   `checkRedirect`), so the tab was left on the error page. Fixed by stopping the redirect in the page
+   before it leaves, as the Mac does: the Navigation API's `navigate` event, in the isolated world, with
+   the background saying which pages are shielded (notes/runtime.md; `content/redirectShield.ts`).
+2. **Protected direct downloads got 403** ("the file downloads with the page's cookie and address").
+   Measured with a logging server: the download carried the cookie but no Referer. No
+   declarativeNetRequest rule, whatever its condition, reaches a `chrome.downloads` request, and the
+   API refuses a `Referer` header. Fixed by fetching direct files in Chrome through the stream worker
+   (byte ranges into OPFS, joined, handed over as a blob), where the rules apply (notes/downloads.md).
+3. **The HLS stream was saved as `Only Film.txt`** ("the stream saves as one file"). Chrome reads an
+   untyped blob as `text/plain` and replaces `.ts` with `.txt` (checked: a `video/mp2t` blob keeps `.ts`).
+   The OPFS file has no type; the hand-off now uses a typed slice of it.
+4. **Rescue skipped the sibling address** ("a dead address moves to another address of the site"). The
+   live rescue's `knownHosts()` held only the dead host: the film watched on the other address had its
+   session carried on under the new host (the tracker's merge window), and the page itself was never in
+   the history, because the history rule ("pages that had a film") was checked before tracking began.
+   Fixed by recording a film page when tracking starts (`Browser.noteWatched`).
+5. **Linux: "the sleep timer fades the sound out"** (CI only). At the check the film sat at 40.86 s
+   since the section began at 40 s, `track=-1`, and the toast was "Sleep timer paused the film": with
+   no sound card (Chrome's ALSA output fails on the runner) the film playing with sound had stalled, so
+   the timer had nothing playing to fade and simply ran out, which is what it should do. The check now
+   makes sure the film plays and moves before setting the timer, accepts `faded=true` (a fade remembered
+   after the timer ends, so a quick one can't slip between looks), and CI gets a PulseAudio null sink.
+   Not verified on Linux from here.
 
 Also seen once: Playwright lost the service worker mid-section (the frames section, after a quiet
-32 s); it didn't happen again in two more runs, and the harness now recovers (above).
+32 s); it didn't happen again, and the harness now recovers (above).
 
 ## CI and releases
 
@@ -187,8 +199,10 @@ Also seen once: Playwright lost the service worker mid-section (the frames secti
   `none` to skip the end-to-end test). Ubuntu, Node 22: `npm ci --legacy-peer-deps`, Vitest, `tsc`
   (the extension and `e2e/`), the release build with `--package` (checked for `cineonDebug` and
   `__DEV__`), `web-ext lint` on `dist/firefox`, the zips as an artifact; then `--dev`, Playwright's
-  Chromium with its system libraries, ffmpeg, the fixture media, and the test in a window under
-  `xvfb-run`. The report and `test-results/` (screenshots, logs) are artifacts.
+  Chromium with its system libraries, ffmpeg, the fixture media, a sound card (a PulseAudio null
+  sink: the runner has none, Chrome's ALSA output fails and a film playing with sound stalls), and
+  the test in a window under `xvfb-run`. The report and `test-results/` (screenshots, logs) are
+  artifacts.
 - `.github/workflows/extension-release.yml`: on `v*` tags (and by hand with `tag` and `dry_run`, as
   windows-release.yml): checks `extension/package.json` has the tag's version, runs Vitest, builds
   `--package`, lints, waits for the release the Mac script makes, and uploads

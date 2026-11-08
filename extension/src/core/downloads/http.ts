@@ -63,6 +63,37 @@ export class DownloadHttp {
     }
   }
 
+  /**
+   * A file's size and whether its server sends parts of it: a GET for the first byte. A 206 with the
+   * total in Content-Range means parts work; a 200 means the server sends the whole file whatever is
+   * asked. Throws as `getBytes` does.
+   */
+  async probe(url: string, signal?: AbortSignal): Promise<{ size: number | null; ranges: boolean }> {
+    const idle = new IdleTimer(this.idleTimeout, signal);
+    try {
+      let response: Response;
+      try {
+        response = await this.fetcher(url, {
+          headers: { Accept: "*/*", Range: "bytes=0-0" },
+          credentials: "include",
+          cache: "no-store",
+          redirect: "follow",
+          signal: idle.signal,
+        });
+      } catch (error) {
+        throw idle.translate(error, "connect");
+      }
+      await response.body?.cancel().catch(() => {});
+      if (response.status >= 400) throw new DownloadHttpError(response.status);
+      const total = /\/\s*(\d+)\s*$/.exec(response.headers.get("content-range") ?? "");
+      if (response.status === 206 && total != null) return { size: Number(total[1]), ranges: true };
+      const length = Number(response.headers.get("content-length") ?? NaN);
+      return { size: Number.isFinite(length) && length > 0 ? length : null, ranges: false };
+    } finally {
+      idle.dispose();
+    }
+  }
+
   async getText(url: string, signal?: AbortSignal): Promise<string> {
     return new TextDecoder().decode(await this.getBytes(url, null, signal));
   }

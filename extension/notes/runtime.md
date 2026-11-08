@@ -144,7 +144,7 @@ Mac writes it. Query values may be strings or numbers. Commands:
 | `removesites`, `deletesession`, `deletetitle`, `addtitle`, `rate` | `id` / `name year kind status` / `id halves` | `addtitle` → `id=` |
 | `download`, `downloads`, `playdownload` | / / `id` | `downloads`: `best=`, `folder=`, `source …`, `sniffed …`, `download\t…` rows, `end=1` |
 | `season`, `seasoncancel`, `seasonconfirm`, `seasonresume`, `seasonstate` | `from=current\|series` | `seasonstate` as the Mac, plus `helper=` |
-| `sleep`, `sleepstate` | `mode=end\|cancel\|seconds&s=\|m=` | |
+| `sleep`, `sleepstate` | `mode=end\|cancel\|seconds&s=\|m=` | `sleepstate` as the Mac, plus `faded=` (the latest timer started its fade, kept after it ends) |
 | `nowplaying`, `remote` | `cmd=toggle\|play\|pause\|next\|forward\|back\|seek&to=` | |
 | `voiceboost`, `subs2`, `subs2state` | `index` / `clear=1` | |
 | `fakeepisodes`, `checknew` | `title`, `list=1x1:2024-01-01,…` | |
@@ -168,9 +168,17 @@ session), `/importreport`, `/filterupdate`, `/updatecheck`, `/intent`, `/shareca
   video, and pages that say they're a film or an episode (parsed with a year, an episode or a kind, or `og:type`
   video). The Mac app only ever shows films; the browser around the extension also shows the person's mail, bank and
   sign-ins, whose pop-ups and redirects must keep working. Pop-ups are closed after the browser opened them
-  (`webNavigation.onCreatedNavigationTarget`); a link opened in a new tab on purpose stays. A redirect can't be
-  cancelled in MV3, so a script sending a shielded page to another site (`client_redirect`, not trusted) is sent
-  back (`tabs.goBack`), and the toast with Allow shows once the page is back. The download shield isn't ported: the
+  (`webNavigation.onCreatedNavigationTarget`); a link opened in a new tab on purpose stays. A script sending a
+  shielded page to another site is stopped in the page before it leaves, as the Mac's navigation delegate does:
+  the top frame's isolated script listens to the Navigation API's `navigate` event and cancels a cross-site,
+  cross-document push/replace that the person didn't start (`userInitiated` false, no user activation), then
+  reports it (`{cineon: "redirect", url}`) for the count and the toast with Allow (`content/redirectShield.ts`).
+  The background tells the top frame whether to (`redirectShield` and `site` in hello's answer and config pushes,
+  `__cineonContent.redirectShield(on, site)` once a page turns out to be a film). This also catches a redirect to
+  a host that never answers, which never commits (`onBeforeNavigate` then `onErrorOccurred`), so the check below
+  never saw it and the tab was left on the browser's error page. After the fact, as before: a committed
+  `client_redirect` away from a shielded page (no Navigation API, or a stake not yet known) is sent back
+  (`tabs.goBack`), and the toast shows once the page is back. The download shield isn't ported: the
   browser's downloads are the person's for everything, and nothing ties one to a tab.
 - **No rescue panel**: banners over the player (`rescue-search` with Open/Leave buttons, a countdown button for a
   strong match on a dead page), or a notification when the page itself failed to load (the browser's error page runs
@@ -184,7 +192,11 @@ session), `/importreport`, `/filterupdate`, `/updatecheck`, `/intent`, `/shareca
 - **Toasts** about a tab are banners in its page; toasts from elsewhere are the pages' or a notification. An action's
   closure is lost if the worker stops before it's pressed.
 - **Browsing history** is recorded (when the setting is on) only on the person's sites and pages that had a film:
-  the extension sees all browsing, the Mac app only what's opened in it.
+  the extension sees all browsing, the Mac app only what's opened in it. A film page goes in when tracking starts
+  (`Browser.noteWatched`): the address changes before anything is tracked, so without it film pages off the
+  person's sites never got in, and rescue (which finds a dead site's other addresses among the hosts seen) lost
+  every address the person had only watched on, since watching the same film elsewhere soon after carries on
+  that session under the new host.
 - **Hibernation** is the browser's discard, and only for tabs on the person's sites or with a film.
 - **Playing a download** opens the file with the computer's player (`downloads.open`, permission added) or shows it in
   the folder; there's no player of Cineon's own.

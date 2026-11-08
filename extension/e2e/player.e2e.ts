@@ -1,6 +1,20 @@
 // e2e.py's awake_tests and tools_tests: staying awake while a film plays (chrome.power, seen through
 // the state's `stayAwake`), voice boost, second subtitles, the browser's media controls, the sleep timer.
-import { BASE, minutes, sleep, test } from "./test.ts";
+import { BASE, minutes, sleep, test, type Cineon } from "./test.ts";
+
+/** Plays the selected tab's film (the media key, then the video itself) until its clock has moved a second. */
+async function playingAndMoving(c: Cineon): Promise<boolean> {
+  await c.run("remote", { cmd: "play" });
+  if (!(await c.waitUntil(async () => (await c.state()).media.endsWith("playing=true"), 5))) {
+    await c.mediaEval("document.querySelector('video').play(); true");
+  }
+  const from = await c.waitUntil(async () => {
+    const s = await c.state();
+    return s.media.endsWith("playing=true") ? Number.parseFloat(s.media) : null;
+  }, 5);
+  if (from == null) return false;
+  return Boolean(await c.waitUntil(async () => (await c.mediaPosition()) > from + 1, 8));
+}
 
 test("[awake] staying awake while a film plays", async ({ cineon: c }) => {
   c.heading("Staying awake while a film plays");
@@ -64,12 +78,22 @@ test("[tools] voice boost, second subtitles, media keys, sleep timer", async ({ 
   const paused = await c.waitUntil(async () => (await c.state()).media.endsWith("playing=false") && (await c.fields("nowplaying")).playing === "0", 8);
   await c.check("the play/pause key pauses it", paused, (await c.run("nowplaying")) + (await c.state()).media);
   c.skip("Siri's play or pause plays it again", "no Siri or App Intents in a browser (the extension's Alt+Shift+P shortcut is the same toggle)");
-  await c.run("remote", { cmd: "play" });
-  await c.waitUntil(async () => (await c.fields("nowplaying")).playing === "1", 8);
+  // The timer fades a film that's playing (e2e.py plays it again with Siri here). Make sure it plays
+  // and its clock moves before setting it: on the first Linux run the film had stalled, the timer just
+  // ran out, and the check read as if the fade were missing.
+  const moving = await playingAndMoving(c);
 
   await c.run("sleep", { mode: "seconds", s: 6 });
-  const fading = await c.waitUntil(async () => (await c.fields("sleepstate")).fading === "true", 6);
-  await c.check("the sleep timer fades the sound out", fading, await c.run("sleepstate"));
+  // `faded` keeps the fade after the timer is done: one with no sound to fade can be over between two looks.
+  const fading = await c.waitUntil(async () => {
+    const f = await c.fields("sleepstate");
+    return f.fading === "true" || f.faded === "true";
+  }, 8);
+  await c.check(
+    "the sleep timer fades the sound out",
+    moving && fading,
+    `${moving ? "" : "the film wasn't playing when the timer was set; "}${await c.run("sleepstate")} media=${(await c.state()).media}`,
+  );
   const stopped = await c.waitUntil(async () => (await c.state()).media.endsWith("playing=false"), 14);
   await c.check("and pauses the film", stopped, (await c.state()).media);
   const restored = await c.waitUntil(async () => Math.abs(Number((await boost()).volume) - 1) < 0.01, 6);
