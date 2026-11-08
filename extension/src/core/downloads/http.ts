@@ -64,6 +64,54 @@ export class DownloadHttp {
   }
 
   /**
+   * A whole response, handed to `write` chunk by chunk as it arrives, so a file of any size never
+   * sits in memory. Returns the bytes written. Throws as `getBytes` does.
+   */
+  async getInto(url: string, write: (chunk: Uint8Array) => Promise<void>, signal?: AbortSignal): Promise<number> {
+    const idle = new IdleTimer(this.idleTimeout, signal);
+    try {
+      let response: Response;
+      try {
+        response = await this.fetcher(url, {
+          headers: { Accept: "*/*" },
+          credentials: "include",
+          cache: "no-store",
+          redirect: "follow",
+          signal: idle.signal,
+        });
+      } catch (error) {
+        throw idle.translate(error, "connect");
+      }
+      if (response.status >= 400) {
+        await response.body?.cancel().catch(() => {});
+        throw new DownloadHttpError(response.status);
+      }
+      if (response.body == null) {
+        const bytes = new Uint8Array(await response.arrayBuffer());
+        await write(bytes);
+        return bytes.length;
+      }
+      const reader = response.body.getReader();
+      let total = 0;
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          idle.touch();
+          await write(value);
+          total += value.length;
+        }
+      } catch (error) {
+        await reader.cancel().catch(() => {});
+        throw idle.translate(error, "lost");
+      }
+      return total;
+    } finally {
+      idle.dispose();
+    }
+  }
+
+  /**
    * A file's size and whether its server sends parts of it: a GET for the first byte. A 206 with the
    * total in Content-Range means parts work; a 200 means the server sends the whole file whatever is
    * asked. Throws as `getBytes` does.

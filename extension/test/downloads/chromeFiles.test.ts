@@ -6,7 +6,7 @@
 // joined file.
 
 import { EpisodeRef } from "../../src/core/data";
-import { PartStore } from "../../src/core/downloads";
+import { DownloadHttp, PartFolder, PartStore } from "../../src/core/downloads";
 import { DownloadRig, FakeServer, until, type FakeRequest } from "./fakes";
 
 let rig: DownloadRig;
@@ -92,4 +92,44 @@ test("a refusal even with the page's headers says so, as the apps word it", asyn
   const failed = rig.center.item(item.id)!;
   expect(failed.status).toBe("failed");
   expect(failed.error).toBe("The site refused. The link may have expired: open the page and download again.");
+});
+
+test("a whole file goes to disk as it arrives, never all in memory", async () => {
+  // The second chunk is only asked for once something reads the first; by then the first must be on
+  // disk. A reader that gathered the whole response first would show no writes at that point.
+  const written: number[] = [];
+  const writesBeforeSecond: number[] = [];
+  let pulls = 0;
+  const body = new ReadableStream<Uint8Array>(
+    {
+      pull(controller) {
+        pulls++;
+        if (pulls === 1) controller.enqueue(new Uint8Array(1000).fill(1));
+        else if (pulls === 2) {
+          writesBeforeSecond.push(written.length);
+          controller.enqueue(new Uint8Array(500).fill(2));
+        } else controller.close();
+      },
+    },
+    { highWaterMark: 0 },
+  );
+  const http = new DownloadHttp(async () => new Response(body, { status: 200 }));
+  const file = {
+    async createWritable() {
+      return {
+        async write(data: Uint8Array) {
+          written.push(data.length);
+        },
+        async close() {},
+        async abort() {},
+      };
+    },
+  };
+  const folder = new PartFolder("x.hls", { getFileHandle: async () => file } as unknown as ConstructorParameters<typeof PartFolder>[1]);
+
+  const size = await folder.fill("output.part", (write) => http.getInto("https://cdn.test/plain.mp4", write));
+
+  expect(size).toBe(1500);
+  expect(written).toEqual([1000, 500]);
+  expect(writesBeforeSecond).toEqual([1]);
 });

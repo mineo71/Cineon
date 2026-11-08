@@ -116,6 +116,25 @@ export class PartFolder {
     await writable.close();
   }
 
+  /** Replaces the file with what `fill` writes, piece by piece. Returns its size. */
+  async fill(name: string, fill: (write: (chunk: Uint8Array) => Promise<void>) => Promise<unknown>): Promise<number> {
+    const writable = await (await this.dir.getFileHandle(name, { create: true })).createWritable({
+      keepExistingData: false,
+    });
+    let size = 0;
+    try {
+      await fill(async (chunk) => {
+        await writable.write(chunk);
+        size += chunk.length;
+      });
+    } catch (error) {
+      await writable.abort().catch(() => {});
+      throw error;
+    }
+    await writable.close();
+    return size;
+  }
+
   async remove(name: string): Promise<void> {
     try {
       await this.dir.removeEntry(name);

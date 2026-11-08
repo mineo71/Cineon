@@ -118,15 +118,42 @@ export class HlsDownloader {
     }
     await prepare?.([url]);
     const { size, ranges } = await this.withRetries(() => this.http.probe(url, signal), signal);
+    if (!ranges || size == null || size <= 0) return this.fetchWhole(url, extension, staging, options, size);
     const segments: HlsSegment[] = [];
-    if (ranges && size != null && size > 0) {
-      for (let offset = 0, i = 0; offset < size; offset += this.fileChunk, i++) {
-        segments.push({ url, duration: 0, sequence: i, key: null, map: null, range: { offset, length: Math.min(this.fileChunk, size - offset) } });
-      }
-    } else {
-      segments.push({ url, duration: 0, sequence: 0, key: null, map: null, range: null });
+    for (let offset = 0, i = 0; offset < size; offset += this.fileChunk, i++) {
+      segments.push({ url, duration: 0, sequence: i, key: null, map: null, range: { offset, length: Math.min(this.fileChunk, size - offset) } });
     }
     return this.fetchAndJoin(segments, staging, options, extension, 0);
+  }
+
+  /**
+   * A server that ignores Range: one request, written to the staging folder as it arrives (a film
+   * can be gigabytes, so it never sits in memory). A retry starts it over.
+   */
+  private async fetchWhole(url: string, extension: string, staging: PartFolder, options: HlsDownloadOptions, size: number | null): Promise<HlsOutcome> {
+    const { progress, signal } = options;
+    await keepOnlyIfSameStream(staging, [{ url, duration: 0, sequence: 0, key: null, map: null, range: null }]);
+    const written = await this.withRetries(
+      () =>
+        staging.fill(OUTPUT_FILE, (write) => {
+          let got = 0;
+          return this.http.getInto(
+            url,
+            async (chunk) => {
+              await write(chunk);
+              got += chunk.length;
+              if (size != null && size > 0) progress?.(Math.min(0.999, got / size));
+            },
+            signal,
+          );
+        }),
+      signal,
+    );
+    if (signal?.aborted) throw new DownloadStoppedError();
+    const outcome: HlsOutcome = { file: OUTPUT_FILE, extension, duration: 0, size: written };
+    await staging.write(DONE_FILE, JSON.stringify(outcome));
+    progress?.(1);
+    return outcome;
   }
 
   /** Fetches what isn't in the staging folder yet, joins it all in order, and marks it whole. */
