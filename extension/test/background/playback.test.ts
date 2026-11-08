@@ -23,6 +23,28 @@ describe("Playback", () => {
     expect(h.runtime.current!.browser.tab(1)!.lastBannerForTests).toBe("toast|Sleep timer paused the film. Good night|offer");
   });
 
+  test("the timer remembers whether it faded, after it's done (a fast fade can't be missed)", async () => {
+    const h = await makeHarness();
+    await openTab(h, 1, FILM);
+    await play(h, 1, 100, 2, 9000);
+    const playback = h.runtime.current!.playback;
+    playback.startSeconds(6);
+    expect(playback.lastTimerFaded).toBe(false);
+    await h.clock.advance(1000);
+    expect(playback.sleepTimer?.isFading).toBe(true);
+    await fromPage(h, 1, "cineonMedia", media("pause", 103, 9000, { sleep: true }));
+    await h.clock.advance(1000);
+    expect(playback.sleepTimer).toBeNull();
+    expect(playback.lastTimerFaded).toBe(true);
+
+    // With nothing playing there's nothing to fade: the timer just ends, and says it didn't fade.
+    playback.startSeconds(6);
+    expect(playback.lastTimerFaded).toBe(false);
+    await h.clock.advance(7000);
+    expect(playback.sleepTimer).toBeNull();
+    expect(playback.lastTimerFaded).toBe(false);
+  });
+
   test("“end of this” ends quietly when something else takes the episode's place", async () => {
     const h = await makeHarness();
     await openTab(h, 1, FILM);

@@ -442,6 +442,8 @@ export async function runDebug(deps: DebugDeps, type: string, query: DebugQuery 
         `active=${timer != null}`,
         `mode=${timer ? (timer.mode.kind === "minutes" ? `minutes(${timer.mode.minutes})` : "endOfItem") : "-"}`,
         `fading=${timer?.isFading ?? false}`,
+        // The latest timer's fade, after the timer is done too (not in the Mac's output).
+        `faded=${session.playback.lastTimerFaded}`,
         `remaining=${session.playback.remaining() ?? -1}`,
         "end=1",
       );
