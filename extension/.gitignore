@@ -3,3 +3,8 @@ dist/
 packages/
 test-results/
 playwright-report/
+demo/site/
+demo/.showtime/
+demo/*.mp4
+demo/*.gif
+demo/*.webp

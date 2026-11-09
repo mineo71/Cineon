@@ -1,10 +1,89 @@
-# Cineon
+<p align="center">
+  <img src="docs/media/icon.png" width="128" alt="Cineon">
+</p>
 
-A very fast, personal browser for watching films, series and cartoons across many sites. It
-remembers what you watched, where, and how far you got, saves films to your computer with one click,
-and lets you watch with friends. Native on macOS (Swift, WebKit) and on Windows (C#, WinUI 3,
-WebView2), with no accounts. The Mac app updates with [Sparkle](https://sparkle-project.org), the
-Windows app with [Velopack](https://velopack.io).
+<h1 align="center">Cineon</h1>
+
+<p align="center">
+  <b>A very fast, personal browser for films, series and cartoons.</b><br>
+  It remembers what you watched, where, and how far you got, on every site.
+</p>
+
+<p align="center">
+  <a href="https://github.com/mineo71/Cineon/releases/latest"><img src="https://img.shields.io/github/v/release/mineo71/Cineon?label=release&color=f2b544&labelColor=1c1c1e" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/macOS-26%2B-e8e8ea?logo=apple&logoColor=white&labelColor=1c1c1e" alt="macOS 26 or later">
+  <img src="https://img.shields.io/badge/Windows-10%2B-e8e8ea?logo=windows&logoColor=white&labelColor=1c1c1e" alt="Windows 10 or later">
+  <img src="https://img.shields.io/badge/Chrome%20%C2%B7%20Edge%20%C2%B7%20Firefox-extension-e8e8ea?logo=googlechrome&logoColor=white&labelColor=1c1c1e" alt="Chrome, Edge and Firefox extension">
+  <img src="https://img.shields.io/badge/accounts-none-e8e8ea?labelColor=1c1c1e" alt="No accounts">
+</p>
+
+<p align="center">
+  <a href="#install-on-a-mac"><b>Mac</b></a> &nbsp;·&nbsp;
+  <a href="#install-on-windows"><b>Windows</b></a> &nbsp;·&nbsp;
+  <a href="#install-the-browser-extension"><b>Browser extension</b></a> &nbsp;·&nbsp;
+  <a href="#build">Build it yourself</a>
+</p>
+
+<p align="center">
+  <a href="docs/media/demo.mp4"><img src="docs/media/demo.webp" width="880" alt="A 50-second tour of Cineon: Home, search, the library, a title card, the timeline, the profile and rate mode"></a>
+</p>
+
+Cineon saves films to your computer with one click and lets you watch with friends. It's native on
+macOS (Swift, WebKit) and on Windows (C#, WinUI 3, WebView2), and it's also a browser extension for
+Chrome, Edge and Firefox. There are no accounts. The Mac app updates with
+[Sparkle](https://sparkle-project.org), the Windows app with [Velopack](https://velopack.io).
+
+## A look around
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/media/home.jpg" alt="Home: the film you were watching, with a Resume button, new episodes and Continue watching">
+      <p><b>Back where you stopped.</b> Home opens on what you were watching, one click from where you
+      left it, with new episodes of your series and everything half-watched below.</p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/media/search.jpg" alt="The command bar searching every site, the library and the web at once">
+      <p><b>One search, all your sites.</b> <kbd>⌘K</kbd> looks through your library, every site you've
+      added and the web at once.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/media/library.jpg" alt="The library: posters with ratings, filters by list, kind, genre, rating and decade">
+      <p><b>Everything you watched, rated.</b> The library fills itself as you watch. Filter by list,
+      kind, genre, rating and decade; hover a poster to rate it.</p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/media/title.jpg" alt="A title card: where you watched it, where you stopped and the history of every episode">
+      <p><b>Every episode, on every site.</b> A title's card shows where you stopped on each site and
+      every evening you spent with it.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/media/timeline.jpg" alt="The timeline: each viewing as a frame on a strip of film, grouped by day">
+      <p><b>Your evenings, as a film strip.</b> The timeline keeps every viewing with real frames from
+      what you watched. Hover a frame to scrub, click to carry on from it.</p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/media/profile.jpg" alt="The profile: a pixel pet, hours watched, films, episodes, streaks and favourite genres">
+      <p><b>Your taste, grown into a pet.</b> Hours, streaks, genres, decades and stars, and a pixel
+      pet whose species, colours and mood come from what you watch.</p>
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/media/rate.jpg" width="49%" alt="Rate mode: one poster at a time, rated with a click or the number keys">
+</p>
+<p align="center"><b>Rate a year in a minute.</b> Rate mode goes through everything you've watched,
+one poster at a time: click a star or press 1 to 0.</p>
+
+<sub>The screenshots and the video use the browser extension's Cineon page with a made-up demo
+library (see <a href="#demo-video-and-screenshots">Demo video and screenshots</a>); the Mac and
+Windows apps share the same screens. Posters and stills come from the public catalogue Cineon
+reads.</sub>
 
 ## Install on a Mac
 
@@ -76,6 +155,107 @@ it as a temporary add-on: download `Cineon-extension-x.y.z-firefox.zip`, open
 `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and pick the zip. Firefox
 removes temporary add-ons when it quits, so this is for trying it, not for every day.
 
+## Watching
+
+- **Top bar**: Home, Library, Timeline, Downloads and Together in one capsule in the middle, with
+  what's playing, search, sites, rating mode and your pet on the right. A site opens as a framed
+  screen with its own toolbar and tabs, so the film's light can spill around it.
+- **Media keys and Control Center**: play/pause, ±10 s, scrubbing and next episode, from the
+  keyboard, AirPods or Control Center, for a site's player or a downloaded film.
+- **Sleep timer**: 15 to 90 minutes, or the end of this episode. The sound fades over 20 s, then it
+  pauses and nothing starts after it. In the player panel, the Watch menu and the native player.
+- **Voice boost** (⇧⌘B): dialogue louder, explosions softer, for players whose sound the page may
+  process (media-source players such as HDRezka's, and same-site files). Others are left alone,
+  since processing their sound would silence them.
+- **Second subtitles**: any subtitle file the player loaded, or one from disk, as a second line above
+  the picture. The native player shows two tracks, and takes `.srt`/`.vtt` files dropped on it.
+- **AirPlay** from the native player. The screen stays awake while anything plays.
+- **New episode alerts**: series you're watching are checked every 6 hours. New episodes notify and
+  appear on Home.
+- **Siri and Shortcuts**: Continue Watching, Play or Pause, Next Episode, Set a Sleep Timer, Rate My
+  Films, Open My Profile.
+
+## Downloads
+
+Cineon notices the files a player streams, the way you'd find them in the Network tab, and a
+Download button appears in the player's corner (or press ⇧⌘S). Whole files are saved as they are.
+HDRezka-style `file.mp4:hls:seg-N.ts` requests are traced back to the whole `file.mp4`. Sites that
+only stream HLS playlists are saved as `.movpkg` packages through AVFoundation. Subtitles the player
+loaded are saved next to the film. Saved films play in the native player on the Downloads page,
+keep their place, go on the timeline, and light the room with real frames.
+
+From an episode, the download button's menu (press and hold it) gets the rest of the season, the
+whole season, or the whole series. For a series Cineon finds every season (from the page's own
+season list, the published episode list, or by trying addresses) and asks first, with the number of
+episodes, a rough size and the free space. The job is saved after every episode, so if Cineon closes
+or crashes partway, Downloads offers to carry on, and episodes that stopped with it are fetched again.
+
+## Ratings, library and profile
+
+- Ratings are out of ten in half stars, shown in gold on every poster. Hover a poster to rate it.
+- **Rate mode** (⇧⌘R) goes through everything you've watched one poster at a time: click a star or
+  press 1 to 0, arrows for halves.
+- The Library filters by list, kind, genre, rating, decade and what's on this Mac, and sorts by
+  watched, added, rating, name, year or length.
+- Ratings and lists are backed up to the Together server and come back after the library is cleared
+  or imported again. Settings shows a recovery code that brings them to another Mac or profile.
+- **Profile**: hours (timed, plus runtimes for what was finished before Cineon), films, episodes,
+  streaks, favourite genres and decades, your stars, when you watch, most watched, and a share card.
+- **Pixel pet**: grown from your taste. Species from your favourite genre, accessory and colours from
+  the next ones, stage from how much you've watched, mood from how recently. It's your avatar in
+  parties and challenges.
+
+## Together
+
+Optional, and nothing leaves the Mac until you start or join something. Each profile gets a random
+key, and the server stores only its hash. Everything works with six-letter codes:
+
+- **Share** your Watched list or one title. A friend types the code, sees the posters, and adds
+  what they like to their backlog.
+- **Watch party**: start one from the film playing. Friends open the same page and their player
+  follows yours: play, pause and every jump. Chat and reactions show over the film.
+- **Challenges**: first to finish a series or film. Everyone's progress bar comes from what they
+  actually watch.
+
+The server address is the `CINEON_TOGETHER_URL` build setting in `project.yml`, one for Debug and one
+for Release. See `server/README.md` to deploy your own.
+
+## Limits worth knowing
+
+- The Mac app needs macOS 26 or later. On Linux there's the browser extension, not an app.
+- Chrome extensions can't run in the apps. uBlock's filter lists do, except for its scriptlet rules, which have
+  no WebKit equivalent, so some sites that fight ad blockers will leak more than in Chrome.
+- DRM services such as Netflix may refuse to play.
+- Posters come from IMDb's and Cinemeta's public, unofficial endpoints. They can change without
+  notice. If they do, Cineon falls back to each page's own title and image. Lookups send film names
+  to those services, and can be turned off in Settings.
+- Four things use private WebKit APIs: per-site shields, the blocked-request counter,
+  picture-in-picture and starting the next episode with its sound on. All are checked before use.
+  This rules out the Mac App Store, so Cineon is published on GitHub instead.
+- Rescue can only look on sites you've added, and reads their search pages the way a browser would.
+  A site that hides its results behind a login or a bot check won't turn anything up. For a series it
+  opens the series' page, since few sites let an episode be linked from search.
+- Learned intro skips use fixed times, so an episode with a longer cold open can skip the wrong part.
+  Undo twice and the rule is dropped. Rules are listed on each title's page.
+- Frames can't be captured from video protected by DRM. Those sessions keep the catalogue's still.
+- Season and series downloads open each episode in a hidden tab and wait for its player to ask for the
+  file, one at a time, two downloads running. A site whose player needs a real click to load won't
+  give up its files this way; those episodes are listed so you can download them by hand.
+- Voice boost doesn't work in the native player yet, and not in players that stream from another
+  site without permission to read the sound.
+- Online subtitle search isn't built in: OpenSubtitles needs an API key. Files from disk work.
+- Downloads can't save DRM-protected or encrypted streams, and won't try. Some sites sign their file
+  links for a short time: if a retry fails with "refused", open the page and download again.
+- Together sends your profile's name, your pet's code, and the titles, positions and page addresses
+  you choose to share, to the Together server. The cloud backup sends each rated or listed title's
+  name, year, IMDb id, rating and list. It can be turned off in Settings. A watch party only works when friends can open the same page.
+  Only the host controls a party.
+- Ambient light and frames photograph Cineon's own window when a site won't let its video be read.
+  That needs macOS 14.4 or later, and no permission.
+- Importing reads pages, bookmarks and saved tabs from Chromium browsers and Arc. Passwords and
+  cookies are never read. History doesn't record whether a film was finished, so the review screen
+  suggests a list for each title and lets you change it.
+
 ## Build
 
 Requires Xcode and XcodeGen (`brew install xcodegen`).
@@ -131,103 +311,22 @@ Install). Sparkle checks every update against the EdDSA key instead.
 Your data is in `~/Library/Application Support/Cineon`, with one SQLite database and one folder of
 saved frames per profile. Downloads go to `~/Movies/Cineon`, which Settings can change.
 
-## Downloads
+## Demo video and screenshots
 
-Cineon notices the files a player streams, the way you'd find them in the Network tab, and a
-Download button appears in the player's corner (or press ⇧⌘S). Whole files are saved as they are.
-HDRezka-style `file.mp4:hls:seg-N.ts` requests are traced back to the whole `file.mp4`. Sites that
-only stream HLS playlists are saved as `.movpkg` packages through AVFoundation. Subtitles the player
-loaded are saved next to the film. Saved films play in the native player on the Downloads page,
-keep their place, go on the timeline, and light the room with real frames.
+The video and the screenshots above are made from the extension's Cineon page, opened as an
+ordinary web page with a made-up library (`extension/demo`). Nothing in it touches a real profile.
 
-From an episode, the download button's menu (press and hold it) gets the rest of the season, the
-whole season, or the whole series. For a series Cineon finds every season (from the page's own
-season list, the published episode list, or by trying addresses) and asks first, with the number of
-episodes, a rough size and the free space. The job is saved after every episode, so if Cineon closes
-or crashes partway, Downloads offers to carry on, and episodes that stopped with it are fetched again.
+```
+cd extension
+node demo/build.mjs                  # demo/site: the Chrome build + demo/seed.ts, which fills the library
+node demo/serve.mjs &                # http://localhost:4317 (?reset fills it again)
+node demo/screenshots.mjs            # docs/media/*.jpg
+showtime make demo/cineon.json --no-audio -o ../docs/media/demo.mp4
+showtime render demo/cineon.json --format webp --width 880 -o ../docs/media/demo.webp
+ffmpeg -i ../docs/media/demo.mp4 -c:v libx264 -crf 24 -preset slow -movflags +faststart -an small.mp4 \
+  && mv small.mp4 ../docs/media/demo.mp4   # about half the size, for the repo
+```
 
-## Watching
-
-- **Top bar**: Home, Library, Timeline, Downloads and Together in one capsule in the middle, with
-  what's playing, search, sites, rating mode and your pet on the right. A site opens as a framed
-  screen with its own toolbar and tabs, so the film's light can spill around it.
-- **Media keys and Control Center**: play/pause, ±10 s, scrubbing and next episode, from the
-  keyboard, AirPods or Control Center, for a site's player or a downloaded film.
-- **Sleep timer**: 15 to 90 minutes, or the end of this episode. The sound fades over 20 s, then it
-  pauses and nothing starts after it. In the player panel, the Watch menu and the native player.
-- **Voice boost** (⇧⌘B): dialogue louder, explosions softer, for players whose sound the page may
-  process (media-source players such as HDRezka's, and same-site files). Others are left alone,
-  since processing their sound would silence them.
-- **Second subtitles**: any subtitle file the player loaded, or one from disk, as a second line above
-  the picture. The native player shows two tracks, and takes `.srt`/`.vtt` files dropped on it.
-- **AirPlay** from the native player. The screen stays awake while anything plays.
-- **New episode alerts**: series you're watching are checked every 6 hours. New episodes notify and
-  appear on Home.
-- **Siri and Shortcuts**: Continue Watching, Play or Pause, Next Episode, Set a Sleep Timer, Rate My
-  Films, Open My Profile.
-
-## Ratings, library and profile
-
-- Ratings are out of ten in half stars, shown in gold on every poster. Hover a poster to rate it.
-- **Rate mode** (⇧⌘R) goes through everything you've watched one poster at a time: click a star or
-  press 1 to 0, arrows for halves.
-- The Library filters by list, kind, genre, rating, decade and what's on this Mac, and sorts by
-  watched, added, rating, name, year or length.
-- Ratings and lists are backed up to the Together server and come back after the library is cleared
-  or imported again. Settings shows a recovery code that brings them to another Mac or profile.
-- **Profile**: hours (timed, plus runtimes for what was finished before Cineon), films, episodes,
-  streaks, favourite genres and decades, your stars, when you watch, most watched, and a share card.
-- **Pixel pet**: grown from your taste. Species from your favourite genre, accessory and colours from
-  the next ones, stage from how much you've watched, mood from how recently. It's your avatar in
-  parties and challenges.
-
-## Together
-
-Optional, and nothing leaves the Mac until you start or join something. Each profile gets a random
-key, and the server stores only its hash. Everything works with six-letter codes:
-
-- **Share** your Watched list or one title. A friend types the code, sees the posters, and adds
-  what they like to their backlog.
-- **Watch party**: start one from the film playing. Friends open the same page and their player
-  follows yours: play, pause and every jump. Chat and reactions show over the film.
-- **Challenges**: first to finish a series or film. Everyone's progress bar comes from what they
-  actually watch.
-
-The server address is the `CINEON_TOGETHER_URL` build setting in `project.yml`, one for Debug and one
-for Release. See `server/README.md` to deploy your own.
-
-## Limits worth knowing
-
-- macOS 26 or later. Windows and Linux would need a separate shell.
-- Chrome extensions can't run. uBlock's filter lists do, except for its scriptlet rules, which have
-  no WebKit equivalent, so some sites that fight ad blockers will leak more than in Chrome.
-- DRM services such as Netflix may refuse to play.
-- Posters come from IMDb's and Cinemeta's public, unofficial endpoints. They can change without
-  notice. If they do, Cineon falls back to each page's own title and image. Lookups send film names
-  to those services, and can be turned off in Settings.
-- Four things use private WebKit APIs: per-site shields, the blocked-request counter,
-  picture-in-picture and starting the next episode with its sound on. All are checked before use.
-  This rules out the Mac App Store, so Cineon is published on GitHub instead.
-- Rescue can only look on sites you've added, and reads their search pages the way a browser would.
-  A site that hides its results behind a login or a bot check won't turn anything up. For a series it
-  opens the series' page, since few sites let an episode be linked from search.
-- Learned intro skips use fixed times, so an episode with a longer cold open can skip the wrong part.
-  Undo twice and the rule is dropped. Rules are listed on each title's page.
-- Frames can't be captured from video protected by DRM. Those sessions keep the catalogue's still.
-- Season and series downloads open each episode in a hidden tab and wait for its player to ask for the
-  file, one at a time, two downloads running. A site whose player needs a real click to load won't
-  give up its files this way; those episodes are listed so you can download them by hand.
-- Voice boost doesn't work in the native player yet, and not in players that stream from another
-  site without permission to read the sound.
-- Online subtitle search isn't built in: OpenSubtitles needs an API key. Files from disk work.
-- Downloads can't save DRM-protected or encrypted streams, and won't try. Some sites sign their file
-  links for a short time: if a retry fails with "refused", open the page and download again.
-- Together sends your profile's name, your pet's code, and the titles, positions and page addresses
-  you choose to share, to the Together server. The cloud backup sends each rated or listed title's
-  name, year, IMDb id, rating and list. It can be turned off in Settings. A watch party only works when friends can open the same page.
-  Only the host controls a party.
-- Ambient light and frames photograph Cineon's own window when a site won't let its video be read.
-  That needs macOS 14.4 or later, and no permission.
-- Importing reads pages, bookmarks and saved tabs from Chromium browsers and Arc. Passwords and
-  cookies are never read. History doesn't record whether a film was finished, so the review screen
-  suggests a list for each title and lets you change it.
+The video is a [showTime](https://github.com/mineo71/showTime) script (`demo/cineon.json`), which
+starts the server by itself. The library is in `demo/library.json` (from Cinemeta) and what was
+watched when is in `demo/seed.ts`.

@@ -1,0 +1,1117 @@
+{
+ "source": "Cinemeta (v3-cinemeta.strem.io), the catalogue Cineon itself reads",
+ "titles": [
+  {
+   "imdbId": "tt11280740",
+   "name": "Severance",
+   "year": 2022,
+   "kind": "series",
+   "genres": [
+    "Drama",
+    "Mystery",
+    "Sci-Fi"
+   ],
+   "runtimeMinutes": 49,
+   "overview": "Mark leads a team of office workers whose memories have been surgically divided between their work and personal lives. When a mysterious colleague appears outside of work, it begins a journey to discover the truth about their jobs.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt11280740/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt11280740/img",
+   "seasons": {
+    "1": [
+     {
+      "name": "Good News About Hell",
+      "still": "https://episodes.metahub.space/tt11280740/1/1/w780.jpg"
+     },
+     {
+      "name": "Half Loop",
+      "still": "https://episodes.metahub.space/tt11280740/1/2/w780.jpg"
+     },
+     {
+      "name": "In Perpetuity",
+      "still": "https://episodes.metahub.space/tt11280740/1/3/w780.jpg"
+     },
+     {
+      "name": "The You You Are",
+      "still": "https://episodes.metahub.space/tt11280740/1/4/w780.jpg"
+     },
+     {
+      "name": "The Grim Barbarity of Optics and Design",
+      "still": "https://episodes.metahub.space/tt11280740/1/5/w780.jpg"
+     },
+     {
+      "name": "Hide and Seek",
+      "still": "https://episodes.metahub.space/tt11280740/1/6/w780.jpg"
+     },
+     {
+      "name": "Defiant Jazz",
+      "still": "https://episodes.metahub.space/tt11280740/1/7/w780.jpg"
+     },
+     {
+      "name": "What’s for Dinner?",
+      "still": "https://episodes.metahub.space/tt11280740/1/8/w780.jpg"
+     },
+     {
+      "name": "The We We Are",
+      "still": "https://episodes.metahub.space/tt11280740/1/9/w780.jpg"
+     }
+    ],
+    "2": [
+     {
+      "name": "Hello, Ms. Cobel",
+      "still": "https://episodes.metahub.space/tt11280740/2/1/w780.jpg"
+     },
+     {
+      "name": "Goodbye, Mrs. Selvig",
+      "still": "https://episodes.metahub.space/tt11280740/2/2/w780.jpg"
+     },
+     {
+      "name": "Who Is Alive?",
+      "still": "https://episodes.metahub.space/tt11280740/2/3/w780.jpg"
+     },
+     {
+      "name": "Woe’s Hollow",
+      "still": "https://episodes.metahub.space/tt11280740/2/4/w780.jpg"
+     },
+     {
+      "name": "Trojan’s Horse",
+      "still": "https://episodes.metahub.space/tt11280740/2/5/w780.jpg"
+     },
+     {
+      "name": "Attila",
+      "still": "https://episodes.metahub.space/tt11280740/2/6/w780.jpg"
+     },
+     {
+      "name": "Chikhai Bardo",
+      "still": "https://episodes.metahub.space/tt11280740/2/7/w780.jpg"
+     },
+     {
+      "name": "Sweet Vitriol",
+      "still": "https://episodes.metahub.space/tt11280740/2/8/w780.jpg"
+     },
+     {
+      "name": "The After Hours",
+      "still": "https://episodes.metahub.space/tt11280740/2/9/w780.jpg"
+     },
+     {
+      "name": "Cold Harbor",
+      "still": "https://episodes.metahub.space/tt11280740/2/10/w780.jpg"
+     }
+    ]
+   }
+  },
+  {
+   "imdbId": "tt14452776",
+   "name": "The Bear",
+   "year": 2022,
+   "kind": "series",
+   "genres": [
+    "Comedy",
+    "Drama"
+   ],
+   "runtimeMinutes": 35,
+   "overview": "A young chef from the fine-dining world returns to Chicago to run his family's sandwich shop.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt14452776/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt14452776/img",
+   "seasons": {
+    "1": [
+     {
+      "name": "System",
+      "still": "https://episodes.metahub.space/tt14452776/1/1/w780.jpg"
+     },
+     {
+      "name": "Hands",
+      "still": "https://episodes.metahub.space/tt14452776/1/2/w780.jpg"
+     },
+     {
+      "name": "Brigade",
+      "still": "https://episodes.metahub.space/tt14452776/1/3/w780.jpg"
+     },
+     {
+      "name": "Dogs",
+      "still": "https://episodes.metahub.space/tt14452776/1/4/w780.jpg"
+     },
+     {
+      "name": "Sheridan",
+      "still": "https://episodes.metahub.space/tt14452776/1/5/w780.jpg"
+     },
+     {
+      "name": "Ceres",
+      "still": "https://episodes.metahub.space/tt14452776/1/6/w780.jpg"
+     },
+     {
+      "name": "Review",
+      "still": "https://episodes.metahub.space/tt14452776/1/7/w780.jpg"
+     },
+     {
+      "name": "Braciole",
+      "still": "https://episodes.metahub.space/tt14452776/1/8/w780.jpg"
+     }
+    ],
+    "2": [
+     {
+      "name": "Beef",
+      "still": "https://episodes.metahub.space/tt14452776/2/1/w780.jpg"
+     },
+     {
+      "name": "Pasta",
+      "still": "https://episodes.metahub.space/tt14452776/2/2/w780.jpg"
+     },
+     {
+      "name": "Sundae",
+      "still": "https://episodes.metahub.space/tt14452776/2/3/w780.jpg"
+     },
+     {
+      "name": "Honeydew",
+      "still": "https://episodes.metahub.space/tt14452776/2/4/w780.jpg"
+     },
+     {
+      "name": "Pop",
+      "still": "https://episodes.metahub.space/tt14452776/2/5/w780.jpg"
+     },
+     {
+      "name": "Fishes",
+      "still": "https://episodes.metahub.space/tt14452776/2/6/w780.jpg"
+     },
+     {
+      "name": "Forks",
+      "still": "https://episodes.metahub.space/tt14452776/2/7/w780.jpg"
+     },
+     {
+      "name": "Bolognese",
+      "still": "https://episodes.metahub.space/tt14452776/2/8/w780.jpg"
+     },
+     {
+      "name": "Omelette",
+      "still": "https://episodes.metahub.space/tt14452776/2/9/w780.jpg"
+     },
+     {
+      "name": "The Bear",
+      "still": "https://episodes.metahub.space/tt14452776/2/10/w780.jpg"
+     }
+    ],
+    "3": [
+     {
+      "name": "Tomorrow",
+      "still": "https://episodes.metahub.space/tt14452776/3/1/w780.jpg"
+     },
+     {
+      "name": "Next",
+      "still": "https://episodes.metahub.space/tt14452776/3/2/w780.jpg"
+     },
+     {
+      "name": "Doors",
+      "still": "https://episodes.metahub.space/tt14452776/3/3/w780.jpg"
+     },
+     {
+      "name": "Violet",
+      "still": "https://episodes.metahub.space/tt14452776/3/4/w780.jpg"
+     },
+     {
+      "name": "Children",
+      "still": "https://episodes.metahub.space/tt14452776/3/5/w780.jpg"
+     },
+     {
+      "name": "Napkins",
+      "still": "https://episodes.metahub.space/tt14452776/3/6/w780.jpg"
+     },
+     {
+      "name": "Legacy",
+      "still": "https://episodes.metahub.space/tt14452776/3/7/w780.jpg"
+     },
+     {
+      "name": "Ice Chips",
+      "still": "https://episodes.metahub.space/tt14452776/3/8/w780.jpg"
+     },
+     {
+      "name": "Apologies",
+      "still": "https://episodes.metahub.space/tt14452776/3/9/w780.jpg"
+     },
+     {
+      "name": "Forever",
+      "still": "https://episodes.metahub.space/tt14452776/3/10/w780.jpg"
+     }
+    ],
+    "4": [
+     {
+      "name": "Groundhogs",
+      "still": "https://episodes.metahub.space/tt14452776/4/1/w780.jpg"
+     },
+     {
+      "name": "Soubise",
+      "still": "https://episodes.metahub.space/tt14452776/4/2/w780.jpg"
+     },
+     {
+      "name": "Scallop",
+      "still": "https://episodes.metahub.space/tt14452776/4/3/w780.jpg"
+     },
+     {
+      "name": "Worms",
+      "still": "https://episodes.metahub.space/tt14452776/4/4/w780.jpg"
+     },
+     {
+      "name": "Replicants",
+      "still": "https://episodes.metahub.space/tt14452776/4/5/w780.jpg"
+     },
+     {
+      "name": "Sophie",
+      "still": "https://episodes.metahub.space/tt14452776/4/6/w780.jpg"
+     },
+     {
+      "name": "Bears",
+      "still": "https://episodes.metahub.space/tt14452776/4/7/w780.jpg"
+     },
+     {
+      "name": "Green",
+      "still": "https://episodes.metahub.space/tt14452776/4/8/w780.jpg"
+     },
+     {
+      "name": "Tonnato",
+      "still": "https://episodes.metahub.space/tt14452776/4/9/w780.jpg"
+     },
+     {
+      "name": "Goodbye",
+      "still": "https://episodes.metahub.space/tt14452776/4/10/w780.jpg"
+     }
+    ],
+    "5": [
+     {
+      "name": "Soda",
+      "still": "https://episodes.metahub.space/tt14452776/5/1/w780.jpg"
+     },
+     {
+      "name": "Lamb",
+      "still": "https://episodes.metahub.space/tt14452776/5/2/w780.jpg"
+     },
+     {
+      "name": "Mint",
+      "still": "https://episodes.metahub.space/tt14452776/5/3/w780.jpg"
+     },
+     {
+      "name": "Ribs",
+      "still": "https://episodes.metahub.space/tt14452776/5/4/w780.jpg"
+     },
+     {
+      "name": "Raspberries",
+      "still": "https://episodes.metahub.space/tt14452776/5/5/w780.jpg"
+     },
+     {
+      "name": "Focaccia",
+      "still": "https://episodes.metahub.space/tt14452776/5/6/w780.jpg"
+     },
+     {
+      "name": "Caramel",
+      "still": "https://episodes.metahub.space/tt14452776/5/7/w780.jpg"
+     },
+     {
+      "name": "The Original Beef of Chicagoland",
+      "still": "https://episodes.metahub.space/tt14452776/5/8/w780.jpg"
+     }
+    ]
+   }
+  },
+  {
+   "imdbId": "tt2788316",
+   "name": "Shogun",
+   "year": 2024,
+   "kind": "series",
+   "genres": [
+    "Action",
+    "Adventure",
+    "Drama"
+   ],
+   "runtimeMinutes": 59,
+   "overview": "When a mysterious European ship is found marooned in a nearby Japanese fishing village, Lord Yoshii Toranaga discovers secrets that could tip the scales of power and devastate his enemies.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt2788316/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt2788316/img",
+   "seasons": {
+    "1": [
+     {
+      "name": "Anjin",
+      "still": "https://episodes.metahub.space/tt2788316/1/1/w780.jpg"
+     },
+     {
+      "name": "Servants of Two Masters",
+      "still": "https://episodes.metahub.space/tt2788316/1/2/w780.jpg"
+     },
+     {
+      "name": "Tomorrow is Tomorrow",
+      "still": "https://episodes.metahub.space/tt2788316/1/3/w780.jpg"
+     },
+     {
+      "name": "The Eightfold Fence",
+      "still": "https://episodes.metahub.space/tt2788316/1/4/w780.jpg"
+     },
+     {
+      "name": "Broken to the Fist",
+      "still": "https://episodes.metahub.space/tt2788316/1/5/w780.jpg"
+     },
+     {
+      "name": "Ladies of the Willow World",
+      "still": "https://episodes.metahub.space/tt2788316/1/6/w780.jpg"
+     },
+     {
+      "name": "A Stick of Time",
+      "still": "https://episodes.metahub.space/tt2788316/1/7/w780.jpg"
+     },
+     {
+      "name": "The Abyss of Life",
+      "still": "https://episodes.metahub.space/tt2788316/1/8/w780.jpg"
+     },
+     {
+      "name": "Crimson Sky",
+      "still": "https://episodes.metahub.space/tt2788316/1/9/w780.jpg"
+     },
+     {
+      "name": "A Dream of a Dream",
+      "still": "https://episodes.metahub.space/tt2788316/1/10/w780.jpg"
+     }
+    ]
+   }
+  },
+  {
+   "imdbId": "tt9253284",
+   "name": "Andor",
+   "year": 2022,
+   "kind": "series",
+   "genres": [
+    "Adventure",
+    "Drama",
+    "Fantasy"
+   ],
+   "runtimeMinutes": 48,
+   "overview": "In an era filled with danger, deception, and intrigue, Cassian Andor embarks on a path that is destined to turn him into a Rebel hero.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt9253284/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt9253284/img",
+   "seasons": {
+    "1": [
+     {
+      "name": "Kassa",
+      "still": "https://episodes.metahub.space/tt9253284/1/1/w780.jpg"
+     },
+     {
+      "name": "That Would Be Me",
+      "still": "https://episodes.metahub.space/tt9253284/1/2/w780.jpg"
+     },
+     {
+      "name": "Reckoning",
+      "still": "https://episodes.metahub.space/tt9253284/1/3/w780.jpg"
+     },
+     {
+      "name": "Aldhani",
+      "still": "https://episodes.metahub.space/tt9253284/1/4/w780.jpg"
+     },
+     {
+      "name": "The Axe Forgets",
+      "still": "https://episodes.metahub.space/tt9253284/1/5/w780.jpg"
+     },
+     {
+      "name": "The Eye",
+      "still": "https://episodes.metahub.space/tt9253284/1/6/w780.jpg"
+     },
+     {
+      "name": "Announcement",
+      "still": "https://episodes.metahub.space/tt9253284/1/7/w780.jpg"
+     },
+     {
+      "name": "Narkina 5",
+      "still": "https://episodes.metahub.space/tt9253284/1/8/w780.jpg"
+     },
+     {
+      "name": "Nobody's Listening!",
+      "still": "https://episodes.metahub.space/tt9253284/1/9/w780.jpg"
+     },
+     {
+      "name": "One Way Out",
+      "still": "https://episodes.metahub.space/tt9253284/1/10/w780.jpg"
+     },
+     {
+      "name": "Daughter of Ferrix",
+      "still": "https://episodes.metahub.space/tt9253284/1/11/w780.jpg"
+     },
+     {
+      "name": "Rix Road",
+      "still": "https://episodes.metahub.space/tt9253284/1/12/w780.jpg"
+     }
+    ],
+    "2": [
+     {
+      "name": "One Year Later",
+      "still": "https://episodes.metahub.space/tt9253284/2/1/w780.jpg"
+     },
+     {
+      "name": "Sagrona Teema",
+      "still": "https://episodes.metahub.space/tt9253284/2/2/w780.jpg"
+     },
+     {
+      "name": "Harvest",
+      "still": "https://episodes.metahub.space/tt9253284/2/3/w780.jpg"
+     },
+     {
+      "name": "Ever Been to Ghorman?",
+      "still": "https://episodes.metahub.space/tt9253284/2/4/w780.jpg"
+     },
+     {
+      "name": "I Have Friends Everywhere",
+      "still": "https://episodes.metahub.space/tt9253284/2/5/w780.jpg"
+     },
+     {
+      "name": "What a Festive Evening",
+      "still": "https://episodes.metahub.space/tt9253284/2/6/w780.jpg"
+     },
+     {
+      "name": "Messenger",
+      "still": "https://episodes.metahub.space/tt9253284/2/7/w780.jpg"
+     },
+     {
+      "name": "Who Are You?",
+      "still": "https://episodes.metahub.space/tt9253284/2/8/w780.jpg"
+     },
+     {
+      "name": "Welcome to the Rebellion",
+      "still": "https://episodes.metahub.space/tt9253284/2/9/w780.jpg"
+     },
+     {
+      "name": "Make It Stop",
+      "still": "https://episodes.metahub.space/tt9253284/2/10/w780.jpg"
+     },
+     {
+      "name": "Who Else Knows?",
+      "still": "https://episodes.metahub.space/tt9253284/2/11/w780.jpg"
+     },
+     {
+      "name": "Jedha, Kyber, Erso",
+      "still": "https://episodes.metahub.space/tt9253284/2/12/w780.jpg"
+     }
+    ]
+   }
+  },
+  {
+   "imdbId": "tt15239678",
+   "name": "Dune: Part Two",
+   "year": 2024,
+   "kind": "film",
+   "genres": [
+    "Action",
+    "Adventure",
+    "Drama"
+   ],
+   "runtimeMinutes": 167,
+   "overview": "Paul Atreides unites with the Fremen while on a warpath of revenge against the conspirators who destroyed his family. Facing a choice between the love of his life and the fate of the universe, he endeavors to prevent a terrible fu...",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt15239678/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt15239678/img"
+  },
+  {
+   "imdbId": "tt12637874",
+   "name": "Fallout",
+   "year": 2024,
+   "kind": "series",
+   "genres": [
+    "Action",
+    "Adventure",
+    "Drama"
+   ],
+   "runtimeMinutes": 56,
+   "overview": "In a future, post-apocalyptic Los Angeles brought about by nuclear decimation, citizens must live in underground bunkers to protect themselves from radiation, mutants and bandits.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt12637874/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt12637874/img",
+   "seasons": {
+    "1": [
+     {
+      "name": "The End",
+      "still": "https://episodes.metahub.space/tt12637874/1/1/w780.jpg"
+     },
+     {
+      "name": "The Target",
+      "still": "https://episodes.metahub.space/tt12637874/1/2/w780.jpg"
+     },
+     {
+      "name": "The Head",
+      "still": "https://episodes.metahub.space/tt12637874/1/3/w780.jpg"
+     },
+     {
+      "name": "The Ghouls",
+      "still": "https://episodes.metahub.space/tt12637874/1/4/w780.jpg"
+     },
+     {
+      "name": "The Past",
+      "still": "https://episodes.metahub.space/tt12637874/1/5/w780.jpg"
+     },
+     {
+      "name": "The Trap",
+      "still": "https://episodes.metahub.space/tt12637874/1/6/w780.jpg"
+     },
+     {
+      "name": "The Radio",
+      "still": "https://episodes.metahub.space/tt12637874/1/7/w780.jpg"
+     },
+     {
+      "name": "The Beginning",
+      "still": "https://episodes.metahub.space/tt12637874/1/8/w780.jpg"
+     }
+    ],
+    "2": [
+     {
+      "name": "The Innovator",
+      "still": "https://episodes.metahub.space/tt12637874/2/1/w780.jpg"
+     },
+     {
+      "name": "The Golden Rule",
+      "still": "https://episodes.metahub.space/tt12637874/2/2/w780.jpg"
+     },
+     {
+      "name": "The Profligate",
+      "still": "https://episodes.metahub.space/tt12637874/2/3/w780.jpg"
+     },
+     {
+      "name": "The Demon in the Snow",
+      "still": "https://episodes.metahub.space/tt12637874/2/4/w780.jpg"
+     },
+     {
+      "name": "The Wrangler",
+      "still": "https://episodes.metahub.space/tt12637874/2/5/w780.jpg"
+     },
+     {
+      "name": "The Other Player",
+      "still": "https://episodes.metahub.space/tt12637874/2/6/w780.jpg"
+     },
+     {
+      "name": "The Handoff",
+      "still": "https://episodes.metahub.space/tt12637874/2/7/w780.jpg"
+     },
+     {
+      "name": "The Strip",
+      "still": "https://episodes.metahub.space/tt12637874/2/8/w780.jpg"
+     }
+    ]
+   }
+  },
+  {
+   "imdbId": "tt15398776",
+   "name": "Oppenheimer",
+   "year": 2023,
+   "kind": "film",
+   "genres": [
+    "Biography",
+    "Drama",
+    "History"
+   ],
+   "runtimeMinutes": 181,
+   "overview": "A dramatization of the life story of J. Robert Oppenheimer, the physicist who had a large hand in the development of the atomic bombs that brought an end to World War II.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt15398776/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt15398776/img"
+  },
+  {
+   "imdbId": "tt11126994",
+   "name": "Arcane",
+   "year": 2021,
+   "kind": "cartoon",
+   "genres": [
+    "Animation",
+    "Action",
+    "Adventure"
+   ],
+   "runtimeMinutes": 41,
+   "overview": "Amid the stark discord of twin cities Piltover and Zaun, two sisters fight on rival sides of a war between magic technologies and clashing convictions.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt11126994/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt11126994/img",
+   "seasons": {
+    "1": [
+     {
+      "name": "Welcome to the Playground",
+      "still": "https://episodes.metahub.space/tt11126994/1/1/w780.jpg"
+     },
+     {
+      "name": "Some Mysteries Are Better Left Unsolved",
+      "still": "https://episodes.metahub.space/tt11126994/1/2/w780.jpg"
+     },
+     {
+      "name": "The Base Violence Necessary for Change",
+      "still": "https://episodes.metahub.space/tt11126994/1/3/w780.jpg"
+     },
+     {
+      "name": "Happy Progress Day!",
+      "still": "https://episodes.metahub.space/tt11126994/1/4/w780.jpg"
+     },
+     {
+      "name": "Everybody Wants to Be My Enemy",
+      "still": "https://episodes.metahub.space/tt11126994/1/5/w780.jpg"
+     },
+     {
+      "name": "When These Walls Come Tumbling Down",
+      "still": "https://episodes.metahub.space/tt11126994/1/6/w780.jpg"
+     },
+     {
+      "name": "The Boy Savior",
+      "still": "https://episodes.metahub.space/tt11126994/1/7/w780.jpg"
+     },
+     {
+      "name": "Oil and Water",
+      "still": "https://episodes.metahub.space/tt11126994/1/8/w780.jpg"
+     },
+     {
+      "name": "The Monster You Created",
+      "still": "https://episodes.metahub.space/tt11126994/1/9/w780.jpg"
+     }
+    ],
+    "2": [
+     {
+      "name": "Heavy Is the Crown",
+      "still": "https://episodes.metahub.space/tt11126994/2/1/w780.jpg"
+     },
+     {
+      "name": "Watch It All Burn",
+      "still": "https://episodes.metahub.space/tt11126994/2/2/w780.jpg"
+     },
+     {
+      "name": "Finally Got the Name Right",
+      "still": "https://episodes.metahub.space/tt11126994/2/3/w780.jpg"
+     },
+     {
+      "name": "Paint the Town Blue",
+      "still": "https://episodes.metahub.space/tt11126994/2/4/w780.jpg"
+     },
+     {
+      "name": "Blisters and Bedrock",
+      "still": "https://episodes.metahub.space/tt11126994/2/5/w780.jpg"
+     },
+     {
+      "name": "The Message Hidden Within the Pattern",
+      "still": "https://episodes.metahub.space/tt11126994/2/6/w780.jpg"
+     },
+     {
+      "name": "Pretend Like It's the First Time",
+      "still": "https://episodes.metahub.space/tt11126994/2/7/w780.jpg"
+     },
+     {
+      "name": "Killing Is a Cycle",
+      "still": "https://episodes.metahub.space/tt11126994/2/8/w780.jpg"
+     },
+     {
+      "name": "The Dirt Under Your Nails",
+      "still": "https://episodes.metahub.space/tt11126994/2/9/w780.jpg"
+     }
+    ]
+   }
+  },
+  {
+   "imdbId": "tt9362722",
+   "name": "Spider-Man: Across the Spider-Verse",
+   "year": 2023,
+   "kind": "cartoon",
+   "genres": [
+    "Animation",
+    "Action",
+    "Adventure"
+   ],
+   "runtimeMinutes": 140,
+   "overview": "Traveling across the multiverse, Miles Morales meets a new team of Spider-People, made up of heroes from different dimensions. But when the heroes clash over how to deal with a new threat, Miles finds himself at a crossroads.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt9362722/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt9362722/img"
+  },
+  {
+   "imdbId": "tt1856101",
+   "name": "Blade Runner 2049",
+   "year": 2017,
+   "kind": "film",
+   "genres": [
+    "Action",
+    "Drama",
+    "Mystery"
+   ],
+   "runtimeMinutes": 164,
+   "overview": "Young Blade Runner K's discovery of a long-buried secret leads him to track down former Blade Runner Rick Deckard, who's been missing for thirty years.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt1856101/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt1856101/img"
+  },
+  {
+   "imdbId": "tt0816692",
+   "name": "Interstellar",
+   "year": 2014,
+   "kind": "film",
+   "genres": [
+    "Adventure",
+    "Sci-Fi"
+   ],
+   "runtimeMinutes": 169,
+   "overview": "In a dystopian future where Earth has become near-uninhabitable, a team of astronauts embark on a mission to find a new home for humanity.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt0816692/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt0816692/img"
+  },
+  {
+   "imdbId": "tt6710474",
+   "name": "Everything Everywhere All at Once",
+   "year": 2022,
+   "kind": "film",
+   "genres": [
+    "Action",
+    "Adventure",
+    "Comedy"
+   ],
+   "runtimeMinutes": 140,
+   "overview": "A middle-aged Chinese immigrant is swept up into an insane adventure in which she alone can save existence by exploring other universes and connecting with the lives she could have led.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt6710474/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt6710474/img"
+  },
+  {
+   "imdbId": "tt3581920",
+   "name": "The Last of Us",
+   "year": 2023,
+   "kind": "series",
+   "genres": [
+    "Action",
+    "Adventure",
+    "Drama"
+   ],
+   "runtimeMinutes": 56,
+   "overview": "After a global pandemic destroys civilization, a hardened survivor takes charge of a 14-year-old girl who may be humanity's last hope.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt3581920/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt3581920/img",
+   "seasons": {
+    "1": [
+     {
+      "name": "When You're Lost in the Darkness",
+      "still": "https://episodes.metahub.space/tt3581920/1/1/w780.jpg"
+     },
+     {
+      "name": "Infected",
+      "still": "https://episodes.metahub.space/tt3581920/1/2/w780.jpg"
+     },
+     {
+      "name": "Long, Long Time",
+      "still": "https://episodes.metahub.space/tt3581920/1/3/w780.jpg"
+     },
+     {
+      "name": "Please Hold to My Hand",
+      "still": "https://episodes.metahub.space/tt3581920/1/4/w780.jpg"
+     },
+     {
+      "name": "Endure and Survive",
+      "still": "https://episodes.metahub.space/tt3581920/1/5/w780.jpg"
+     },
+     {
+      "name": "Kin",
+      "still": "https://episodes.metahub.space/tt3581920/1/6/w780.jpg"
+     },
+     {
+      "name": "Left Behind",
+      "still": "https://episodes.metahub.space/tt3581920/1/7/w780.jpg"
+     },
+     {
+      "name": "When We Are in Need",
+      "still": "https://episodes.metahub.space/tt3581920/1/8/w780.jpg"
+     },
+     {
+      "name": "Look for the Light",
+      "still": "https://episodes.metahub.space/tt3581920/1/9/w780.jpg"
+     }
+    ],
+    "2": [
+     {
+      "name": "Future Days",
+      "still": "https://episodes.metahub.space/tt3581920/2/1/w780.jpg"
+     },
+     {
+      "name": "Through the Valley",
+      "still": "https://episodes.metahub.space/tt3581920/2/2/w780.jpg"
+     },
+     {
+      "name": "The Path",
+      "still": "https://episodes.metahub.space/tt3581920/2/3/w780.jpg"
+     },
+     {
+      "name": "Day One",
+      "still": "https://episodes.metahub.space/tt3581920/2/4/w780.jpg"
+     },
+     {
+      "name": "Feel Her Love",
+      "still": "https://episodes.metahub.space/tt3581920/2/5/w780.jpg"
+     },
+     {
+      "name": "The Price",
+      "still": "https://episodes.metahub.space/tt3581920/2/6/w780.jpg"
+     },
+     {
+      "name": "Convergence",
+      "still": "https://episodes.metahub.space/tt3581920/2/7/w780.jpg"
+     }
+    ]
+   }
+  },
+  {
+   "imdbId": "tt0245429",
+   "name": "Spirited Away",
+   "year": 2003,
+   "kind": "cartoon",
+   "genres": [
+    "Animation",
+    "Adventure",
+    "Family"
+   ],
+   "runtimeMinutes": 125,
+   "overview": "During her family's move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches and spirits, and where humans are changed into beasts.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt0245429/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt0245429/img"
+  },
+  {
+   "imdbId": "tt13238346",
+   "name": "Past Lives",
+   "year": 2023,
+   "kind": "film",
+   "genres": [
+    "Drama",
+    "Romance"
+   ],
+   "runtimeMinutes": 106,
+   "overview": "Nora and Hae Sung, two deeply connected childhood friends, are wrested apart after Nora's family emigrates from South Korea. Twenty years later, they are reunited for one fateful week as they confront notions of love and destiny.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt13238346/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt13238346/img"
+  },
+  {
+   "imdbId": "tt14230458",
+   "name": "Poor Things",
+   "year": 2023,
+   "kind": "film",
+   "genres": [
+    "Comedy",
+    "Drama",
+    "Romance"
+   ],
+   "runtimeMinutes": 141,
+   "overview": "An account of the fantastical evolution of Bella Baxter, a young woman brought back to life by the brilliant and unorthodox scientist Dr. Godwin Baxter.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt14230458/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt14230458/img"
+  },
+  {
+   "imdbId": "tt2356777",
+   "name": "True Detective",
+   "year": 2014,
+   "kind": "series",
+   "genres": [
+    "Crime",
+    "Drama",
+    "Mystery"
+   ],
+   "runtimeMinutes": 61,
+   "overview": "Anthology series in which police investigations unearth the personal and professional secrets of those involved, both within and outside the law.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt2356777/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt2356777/img",
+   "seasons": {
+    "1": [
+     {
+      "name": "The Long Bright Dark",
+      "still": "https://episodes.metahub.space/tt2356777/1/1/w780.jpg"
+     },
+     {
+      "name": "Seeing Things",
+      "still": "https://episodes.metahub.space/tt2356777/1/2/w780.jpg"
+     },
+     {
+      "name": "The Locked Room",
+      "still": "https://episodes.metahub.space/tt2356777/1/3/w780.jpg"
+     },
+     {
+      "name": "Who Goes There",
+      "still": "https://episodes.metahub.space/tt2356777/1/4/w780.jpg"
+     },
+     {
+      "name": "The Secret Fate of All Life",
+      "still": "https://episodes.metahub.space/tt2356777/1/5/w780.jpg"
+     },
+     {
+      "name": "Haunted Houses",
+      "still": "https://episodes.metahub.space/tt2356777/1/6/w780.jpg"
+     },
+     {
+      "name": "After You've Gone",
+      "still": "https://episodes.metahub.space/tt2356777/1/7/w780.jpg"
+     },
+     {
+      "name": "Form and Void",
+      "still": "https://episodes.metahub.space/tt2356777/1/8/w780.jpg"
+     }
+    ],
+    "2": [
+     {
+      "name": "The Western Book of the Dead",
+      "still": "https://episodes.metahub.space/tt2356777/2/1/w780.jpg"
+     },
+     {
+      "name": "Night Finds You",
+      "still": "https://episodes.metahub.space/tt2356777/2/2/w780.jpg"
+     },
+     {
+      "name": "Maybe Tomorrow",
+      "still": "https://episodes.metahub.space/tt2356777/2/3/w780.jpg"
+     },
+     {
+      "name": "Down Will Come",
+      "still": "https://episodes.metahub.space/tt2356777/2/4/w780.jpg"
+     },
+     {
+      "name": "Other Lives",
+      "still": "https://episodes.metahub.space/tt2356777/2/5/w780.jpg"
+     },
+     {
+      "name": "Church in Ruins",
+      "still": "https://episodes.metahub.space/tt2356777/2/6/w780.jpg"
+     },
+     {
+      "name": "Black Maps and Motel Rooms",
+      "still": "https://episodes.metahub.space/tt2356777/2/7/w780.jpg"
+     },
+     {
+      "name": "Omega Station",
+      "still": "https://episodes.metahub.space/tt2356777/2/8/w780.jpg"
+     }
+    ],
+    "3": [
+     {
+      "name": "The Great War and Modern Memory",
+      "still": "https://episodes.metahub.space/tt2356777/3/1/w780.jpg"
+     },
+     {
+      "name": "Kiss Tomorrow Goodbye",
+      "still": "https://episodes.metahub.space/tt2356777/3/2/w780.jpg"
+     },
+     {
+      "name": "The Big Never",
+      "still": "https://episodes.metahub.space/tt2356777/3/3/w780.jpg"
+     },
+     {
+      "name": "The Hour and the Day",
+      "still": "https://episodes.metahub.space/tt2356777/3/4/w780.jpg"
+     },
+     {
+      "name": "If You Have Ghosts",
+      "still": "https://episodes.metahub.space/tt2356777/3/5/w780.jpg"
+     },
+     {
+      "name": "Hunters in the Dark",
+      "still": "https://episodes.metahub.space/tt2356777/3/6/w780.jpg"
+     },
+     {
+      "name": "The Final Country",
+      "still": "https://episodes.metahub.space/tt2356777/3/7/w780.jpg"
+     },
+     {
+      "name": "Now Am Found",
+      "still": "https://episodes.metahub.space/tt2356777/3/8/w780.jpg"
+     }
+    ],
+    "4": [
+     {
+      "name": "Night Country: Part 1",
+      "still": "https://episodes.metahub.space/tt2356777/4/1/w780.jpg"
+     },
+     {
+      "name": "Night Country: Part 2",
+      "still": "https://episodes.metahub.space/tt2356777/4/2/w780.jpg"
+     },
+     {
+      "name": "Night Country: Part 3",
+      "still": "https://episodes.metahub.space/tt2356777/4/3/w780.jpg"
+     },
+     {
+      "name": "Night Country: Part 4",
+      "still": "https://episodes.metahub.space/tt2356777/4/4/w780.jpg"
+     },
+     {
+      "name": "Night Country: Part 5",
+      "still": "https://episodes.metahub.space/tt2356777/4/5/w780.jpg"
+     },
+     {
+      "name": "Night Country: Part 6",
+      "still": "https://episodes.metahub.space/tt2356777/4/6/w780.jpg"
+     }
+    ]
+   }
+  },
+  {
+   "imdbId": "tt6751668",
+   "name": "Parasite",
+   "year": 2019,
+   "kind": "film",
+   "genres": [
+    "Drama",
+    "Thriller"
+   ],
+   "runtimeMinutes": 133,
+   "overview": "Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt6751668/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt6751668/img"
+  },
+  {
+   "imdbId": "tt1392190",
+   "name": "Mad Max: Fury Road",
+   "year": 2015,
+   "kind": "film",
+   "genres": [
+    "Action",
+    "Adventure",
+    "Sci-Fi"
+   ],
+   "runtimeMinutes": 121,
+   "overview": "In a post-apocalyptic wasteland, a woman rebels against a tyrannical ruler in search for her homeland with the aid of a group of female prisoners, a psychotic worshipper and a drifter named Max.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt1392190/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt1392190/img"
+  },
+  {
+   "imdbId": "tt2278388",
+   "name": "The Grand Budapest Hotel",
+   "year": 2014,
+   "kind": "film",
+   "genres": [
+    "Comedy",
+    "Drama"
+   ],
+   "runtimeMinutes": 100,
+   "overview": "The owner of an aging high-class hotel regales a writer with tales of serving as a lobby boy under an exceptional concierge in the hotel's glory years.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt2278388/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt2278388/img"
+  },
+  {
+   "imdbId": "tt2543164",
+   "name": "Arrival",
+   "year": 2016,
+   "kind": "film",
+   "genres": [
+    "Drama",
+    "Mystery",
+    "Sci-Fi"
+   ],
+   "runtimeMinutes": 116,
+   "overview": "Linguist Louise Banks leads a team of investigators when gigantic spaceships touch down around the world. As nations teeter on the verge of global war, Banks and her crew must find a way to communicate with the extraterrestrial vi...",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt2543164/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt2543164/img"
+  },
+  {
+   "imdbId": "tt29623480",
+   "name": "The Wild Robot",
+   "year": 2024,
+   "kind": "cartoon",
+   "genres": [
+    "Animation",
+    "Adventure",
+    "Family"
+   ],
+   "runtimeMinutes": 102,
+   "overview": "A sentient robot stranded on an uninhabited island raises an orphaned gosling while trying to fit in with the local wildlife.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt29623480/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt29623480/img"
+  },
+  {
+   "imdbId": "tt17009710",
+   "name": "Anatomy of a Fall",
+   "year": 2024,
+   "kind": "film",
+   "genres": [
+    "Crime",
+    "Drama",
+    "Mystery"
+   ],
+   "runtimeMinutes": 151,
+   "overview": "A woman is suspected of murder after her husband's death; their half-blind son faces a moral dilemma as the main witness.",
+   "posterUrl": "https://images.metahub.space/poster/medium/tt17009710/img",
+   "backdropUrl": "https://images.metahub.space/background/medium/tt17009710/img"
+  }
+ ]
+}

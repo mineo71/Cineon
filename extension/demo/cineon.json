@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "Cineon",
+    "subtitle": "Remembers every film, on every site",
+    "logo": "../assets/logo-mark.png",
+    "outro": {
+      "title": "Cineon",
+      "subtitle": "Mac · Windows · Chrome · Edge · Firefox",
+      "url": "github.com/mineo71/Cineon"
+    }
+  },
+  "server": { "run": "node serve.mjs", "url": "http://localhost:4317/" },
+  "hooks": { "before": [{ "run": "node build.mjs" }] },
+  "app": {
+    "url": "http://localhost:4317/#home",
+    "viewport": { "width": 1440, "height": 900 },
+    "deviceScaleFactor": 2,
+    "colorScheme": "dark",
+    "clock": "2026-11-11T23:10:00"
+  },
+  "setup": [{ "do": "wait", "for": "role=button[name=\"Resume at 30:23\"]" }],
+  "style": {
+    "background": "radial-gradient(120% 90% at 50% 0%, #3a2c1a 0%, #141210 55%, #070707 100%)",
+    "accent": "#f2b544",
+    "address": "Cineon",
+    "captionStyle": "dark",
+    "maxZoom": 1.6
+  },
+  "audio": { "sounds": false, "subtitles": "off" },
+  "scenes": [
+    {
+      "id": "home",
+      "steps": [
+        {
+          "do": "hover",
+          "target": "role=button[name=\"Resume at 30:23\"]",
+          "show": { "caption": "Back where you stopped", "spotlight": "glow", "hold": 1800 }
+        },
+        {
+          "do": "scroll",
+          "by": 420,
+          "show": { "caption": "New episodes, found for you", "zoom": false, "hold": 1600 }
+        },
+        { "do": "scroll", "by": -420, "show": { "zoom": false } }
+      ]
+    },
+    {
+      "id": "search",
+      "steps": [
+        { "do": "press", "key": "ControlOrMeta+K", "show": { "caption": "One search, all your sites" } },
+        { "do": "type", "target": ".command-field input", "text": "spi", "pace": "human" },
+        { "do": "wait", "for": "role=option[name=\"Spirited Away Watched\"]", "show": { "hold": 1200 } },
+        { "do": "press", "key": "Escape" }
+      ]
+    },
+    {
+      "id": "library",
+      "steps": [
+        { "do": "click", "target": "role=button[name=\"Library\"]", "show": { "caption": "Everything you watched, rated", "zoom": false, "hold": 1400 } },
+        { "do": "click", "target": "role=button[name=\"Series\"]" },
+        { "do": "click", "target": "role=button[name=\"All\"]", "show": { "hold": 400 } },
+        {
+          "do": "click",
+          "target": "role=button[name=\"Severance\"]",
+          "show": { "caption": "Every episode, on every site", "hold": 2200 }
+        },
+        { "do": "press", "key": "Escape" }
+      ]
+    },
+    {
+      "id": "timeline",
+      "steps": [
+        { "do": "click", "target": "role=button[name=\"Timeline\"]", "show": { "caption": "Your evenings, as a film strip", "zoom": false, "hold": 1400 } },
+        { "do": "scroll", "by": 700, "show": { "zoom": false, "hold": 900 } }
+      ]
+    },
+    {
+      "id": "profile",
+      "steps": [
+        { "do": "click", "target": "role=button[name=\"Alex: profile\"]", "show": { "zoom": false } },
+        { "do": "hover", "target": ".pet-stage", "show": { "caption": "Your taste, grown into a pet", "spotlight": "glow", "hold": 1800 } },
+        { "do": "scroll", "by": 360, "show": { "caption": "Hours, streaks, genres, stars", "zoom": false, "hold": 1600 } }
+      ]
+    },
+    {
+      "id": "rate",
+      "steps": [
+        { "do": "click", "target": "role=button[name=\"Rate your films, 4 waiting\"]", "show": { "caption": "Rate a year in a minute", "zoom": false } },
+        { "do": "press", "key": "9", "show": { "hold": 600 } },
+        { "do": "press", "key": "8", "show": { "hold": 600 } },
+        { "do": "press", "key": "0", "show": { "hold": 1200 } }
+      ]
+    }
+  ]
+}
